@@ -1,0 +1,38 @@
+# This file contains metadata for your plugin. Since 
+# version 2.0 of QGIS this is the proper way to supply 
+# information about a plugin. The old method of 
+# embedding metadata in __init__.py will 
+# is no longer supported since version 2.0.
+
+# This file should be included when you package your plugin.# Mandatory items:
+
+[general]
+name=infoplus
+qgisMinimumVersion=2.0
+description=infoplus is a Plugin to enhance multiple identify features.
+about=
+version=0.1
+author=David Erill, Carlos Lopez
+email=daviderill79@gmail.com
+
+# End of mandatory metadata
+
+# Recommended items:
+
+# Uncomment the following line and add your changelog:
+# changelog=
+
+# Tags are comma separated with spaces allowed
+tags=toponomastic, search, street, catastre, coordinate
+
+homepage=https://github.com/psigcat/infoplus
+tracker=https://github.com/psigcat/infoplus/issues
+repository=https://github.com/psigcat/infoplus
+category=Plugins
+icon=icon.png
+# experimental flag
+experimental=True
+
+# deprecated flag (applies to the whole plugin, not just a single version)
+deprecated=False
+

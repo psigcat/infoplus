@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/plugins/InfoPlus" >
+        <file>icon_infoplus.png</file>
+        <file>icon_infoplus2.png</file>        
+    </qresource>
+</RCC>
