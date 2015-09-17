@@ -28,6 +28,7 @@ from qgis.core import (QgsGeometry, QgsPoint, QgsLogger)
 #from PyQt4.QtGui import (QAction, QIcon, QDockWidget, QTextDocument, QIntValidator)
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
+from PyQt4 import QtWebKit
 
 import resources_rc
 from info_plus_point import InfoPlusPoint
@@ -81,7 +82,20 @@ class InfoPlus(QObject):
         
         self.toolbar = self.iface.addToolBar(u'InfoPlus')
         self.toolbar.setObjectName(u'InfoPlus')
+        
+        # global settings for web componets
+        self.initWebKitSettings()
     
+    def initWebKitSettings(self):
+        ''' Set global configuration for WebKit components
+        '''
+        # set webView setting
+        QtWebKit.QWebSettings.globalSettings().setAttribute(QtWebKit.QWebSettings.JavascriptEnabled, True)
+        QtWebKit.QWebSettings.globalSettings().setAttribute(QtWebKit.QWebSettings.DeveloperExtrasEnabled, True)
+        QtWebKit.QWebSettings.globalSettings().setAttribute(QtWebKit.QWebSettings.SpatialNavigationEnabled, True)
+        QtWebKit.QWebSettings.globalSettings().setAttribute(QtWebKit.QWebSettings.PrintElementBackgrounds, True)
+        QtWebKit.QWebSettings.globalSettings().setAttribute(QtWebKit.QWebSettings.OfflineStorageDatabaseEnabled, False)
+        QtWebKit.QWebSettings.globalSettings().setAttribute(QtWebKit.QWebSettings.LocalStorageEnabled, False)
     
     def loadPluginSettings(self):
         ''' Load plugin settings

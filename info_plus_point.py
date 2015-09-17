@@ -1,7 +1,12 @@
+import json
+from collections import OrderedDict
+
 from qgis.gui import *
 from qgis.core import *
 from PyQt4.Qt import *
+
 from ui.info_plus_dialog import InfoPlusDialog
+from ui.records_display_widget import RecordsDisplayWidget
 
 
 class InfoPlusPoint(QgsMapTool):
@@ -40,34 +45,48 @@ class InfoPlusPoint(QgsMapTool):
         
     
     def processLayers(self):
-
-        i = 0    
-        self.dlg.tbMain.setCurrentIndex(i)    
-        for layer in self.layers:
+        
+        # clean all toolBox elements if any starting from the last
+        # to avoid index invalidation 
+        for index in range(self.dlg.tbMain.count() - 1, -1, -1):
+            self.dlg.tbMain.removeItem(index)
+            
+        for i, layer in enumerate(self.layers):
             # If have any feature selected
             if layer.selectedFeatureCount() > 0:
                 aux = layer.name()+" ("+str(layer.selectedFeatureCount())+")" 
-                if i > 1:
-                    self.newPage = QWidget()
-                    self.newPage.setObjectName("page_"+str(i))
-                    self.dlg.tbMain.addItem(self.newPage, aux)
-                self.dlg.tbMain.setItemText(i, aux)
-                self.pageIndex = i
+                self.newPage = RecordsDisplayWidget(self.iface.mainWindow())
+                self.newPage.setObjectName("page_"+str(i))
                 self.processLayer(layer)
-                i = i+1
-
+                self.dlg.tbMain.addItem(self.newPage, aux)
                 
     def processLayer(self, layer):
-        
         # Get selected features of current layers
-        i = 1
-        total = layer.selectedFeatureCount()
-        print ""
-        for feature in layer.selectedFeatures():
+        columns = [field.name() for field in layer.pendingFields().toList()]
+        total = len(layer.selectedFeatures())
+        featuresDicts = []
+        for i, feature in enumerate(layer.selectedFeatures()):
             print "Feature "+str(i)+ " of "+str(total)
-            self.processFeature(feature)
-            i = i + 1
+            
+            values = feature.attributes()
+            featureDict = OrderedDict(zip(columns, values))
+            print featureDict
+            featuresDicts.append( featureDict )
         
+        if len(featuresDicts) == 0:
+            return
+        
+        self.processFeatures(featuresDicts)
+        
+    def processFeatures(self, featuresDicts):
+        ''' Push record in the webView
+        '''
+        jsonString = json.dumps(featuresDicts)
+        
+        JsCommand = "showRecords(%s)" % (jsonString)
+        QgsLogger.debug(self.tr("display records with with JS command: %s" % JsCommand), 3)
+        
+        self.newPage.webView.page().mainFrame().evaluateJavaScript(JsCommand)
     
     def processFeature(self, feature):
         
