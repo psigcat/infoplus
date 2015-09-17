@@ -34,7 +34,7 @@ function showRecords(jsonFromPython) {
                 return 'Category Index';
             })
             // (_optional_) max number of records to be shown, `default = 25`
-            .size(10)
+            .size(100)
         .columns(columns)
         // (_optional_) sort using the given field, `default = function(d){return d;}`
         .sortBy(function (d) {
