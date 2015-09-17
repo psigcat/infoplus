@@ -8,7 +8,7 @@ var recordsTable = dc.dataTable('.dc-data-table');
 function showRecords(jsonFromPython) {
     console.log(jsonFromPython);
     
-    if (Object.keys(jsonFromPython).lenght == 0) {
+    if (jsonFromPython.length == 0) {
         return;
     }
     
