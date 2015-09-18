@@ -4,8 +4,15 @@
 /* global dc,d3,crossfilter,colorbrewer */
 
 var recordsTable = dc.dataTable('.dc-data-table');
+var layerId = null,
+    jsonFromPython = null,
+    currentCat = null;
 
-function showRecords(jsonFromPython) {
+function showRecords(layerId, jsonFromPython) {
+    layerId = layerId;
+    jsonFromPython = jsonFromPython;
+    
+    console.log(layerId);
     console.log(jsonFromPython);
     
     if (jsonFromPython.length == 0) {
@@ -51,4 +58,18 @@ function showRecords(jsonFromPython) {
 
     //simply call `.renderAll()` to render all charts on the page
     dc.renderAll();
+    
+    // #### add listener to manage zooming / centering
+    d3.selectAll('.dc-table-row').on('click', function() {
+       // get cat value to find it in the layer features
+       // beaware that it is text not converted as integer
+       currentCat = d3.select(this).select('.dc-table-column._0').text();
+       
+       // do some selection/hilight of the current row
+       // changing some param
+       
+       console.log(layerId, currentCat)
+       
+       recordsDisplayWidgetBridge.setSelctedRecord(layerId, currentCat)
+    });
 };

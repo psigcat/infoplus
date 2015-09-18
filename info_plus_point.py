@@ -7,6 +7,7 @@ from PyQt4.Qt import *
 
 from ui.info_plus_dialog import InfoPlusDialog
 from ui.records_display_widget import RecordsDisplayWidget
+from template.records_display_widget_bridge import RecordsDisplayWidgetBridge 
 
 
 class InfoPlusPoint(QgsMapTool):
@@ -16,7 +17,11 @@ class InfoPlusPoint(QgsMapTool):
         self.active = False
         QgsMapTool.__init__(self, self.canvas)
         self.setAction(action)
-    
+        
+        self.recordsDisplayWidgetBridge = None
+        self.newPage = None
+        self.selectedLayerId = None
+        self.selectedCat = None
     
     def canvasPressEvent(self, e):
     
@@ -36,13 +41,70 @@ class InfoPlusPoint(QgsMapTool):
         # Create new dialog
         self.dlg = InfoPlusDialog()
         
+        # add listener to selected layer/record
+        self.dlg.center_PButton.clicked.connect(self.centerSelectedFeature)
+        self.dlg.zoom_PButton.clicked.connect(self.zoomSelectedFeature)
+        
         # Iterate over all layers
         self.layers = self.iface.mapCanvas().layers()
         self.processLayers()
         
         # Show dialog
         self.dlg.show()
+    
+    def zoomSelectedFeature(self):
+        ''' zoom to the selected feature
+        '''
+        if not self.selectedLayerId or not self.selectedCat:
+            return
         
+        # for now... do nothing!
+    
+    def centerSelectedFeature(self):
+        ''' pan to the selected feature
+        '''
+        if (not self.selectedLayerId) or (not self.selectedCat):
+            return
+        
+        # get current selected layer
+        layer = QgsMapLayerRegistry.instance().mapLayer(self.selectedLayerId)
+        if (not layer) or (not layer.isValid()):
+            return
+        
+        # get feature with the specific cat
+        expression = QgsExpression("\"cat\"='{}'".format(self.selectedCat))
+        request = QgsFeatureRequest(expression)
+        iterator = layer.getFeatures(request)
+        try:
+            feature = iterator.next()
+        except:
+            # no feature found
+            return
+        
+        # depending on geometry do different actions
+        geometry = feature.geometry()
+        
+        # skip if not valid
+        if (geometry.type == QGis.UnknownGeometry) or (geometry.type == QGis.NoGeometry):
+            return
+        
+        # if point or line 
+        if (geometry.type == QGis.Point) or (geometry.type == QGis.Line):
+            centroid = geometry.centroid().asPoint()
+            self.canvas.setCenter(centroid)
+        else:
+            bbox = geometry.boundingBox()
+            self.canvas.setExtent(bbox)
+        
+        self.canvas.refresh()
+    
+    def setSelectedRecord(self, layerId, cat):
+        ''' Set current selected Record and layer
+        '''
+        QgsLogger.debug("InfoPlusPoint.setSelectedRecord: Selected layerId = {} and record cat {}".format(layerId, cat), 3)
+
+        self.selectedLayerId = layerId
+        self.selectedCat = cat
     
     def processLayers(self):
         
@@ -50,7 +112,12 @@ class InfoPlusPoint(QgsMapTool):
         # to avoid index invalidation 
         for index in range(self.dlg.tbMain.count() - 1, -1, -1):
             self.dlg.tbMain.removeItem(index)
-            
+        
+        # create unique bridge for all web pages
+        self.recordsDisplayWidgetBridge = RecordsDisplayWidgetBridge()
+        self.recordsDisplayWidgetBridge.selectedRecord.connect(self.setSelectedRecord)
+        
+        # create and populate webpage
         for i, layer in enumerate(self.layers):
             # If have any feature selected
             if layer.selectedFeatureCount() > 0:
@@ -76,17 +143,22 @@ class InfoPlusPoint(QgsMapTool):
         if len(featuresDicts) == 0:
             return
         
-        self.processFeatures(featuresDicts)
+        self.processFeatures(layer.id(), featuresDicts)
         
-    def processFeatures(self, featuresDicts):
+    def processFeatures(self, layerId, featuresDicts):
         ''' Push record in the webView
         '''
-        jsonString = json.dumps(featuresDicts)
-        
-        JsCommand = "showRecords(%s)" % (jsonString)
-        QgsLogger.debug(self.tr("display records with with JS command: %s" % JsCommand), 3)
-        
-        self.newPage.webView.page().mainFrame().evaluateJavaScript(JsCommand)
+        if self.newPage:
+            # first inject bridge object
+            self.newPage.webView.page().mainFrame().addToJavaScriptWindowObject("recordsDisplayWidgetBridge", self.recordsDisplayWidgetBridge)
+            
+            # then render records
+            jsonString = json.dumps(featuresDicts)
+            
+            JsCommand = "showRecords('%s', %s)" % (layerId, jsonString)
+            QgsLogger.debug(self.tr("display records with with JS command: %s" % JsCommand), 3)
+            
+            self.newPage.webView.page().mainFrame().evaluateJavaScript(JsCommand)
     
     def processFeature(self, feature):
         
