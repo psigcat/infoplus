@@ -96,7 +96,11 @@ class InfoPlus(QObject):
         QtWebKit.QWebSettings.globalSettings().setAttribute(QtWebKit.QWebSettings.PrintElementBackgrounds, True)
         QtWebKit.QWebSettings.globalSettings().setAttribute(QtWebKit.QWebSettings.OfflineStorageDatabaseEnabled, False)
         QtWebKit.QWebSettings.globalSettings().setAttribute(QtWebKit.QWebSettings.LocalStorageEnabled, False)
-    
+        
+        # avoid caching webpages of the PopUp webview
+        QtWebKit.QWebSettings.setMaximumPagesInCache( 0 );
+        QtWebKit.QWebSettings.setObjectCacheCapacities( 0, 0, 0 );
+
     def loadPluginSettings(self):
         ''' Load plugin settings
         '''      
