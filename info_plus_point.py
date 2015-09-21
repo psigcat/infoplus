@@ -139,6 +139,10 @@ class InfoPlusPoint(QgsMapTool):
             items.extend( zip(columns, values) )
             featureDict = OrderedDict(items)
             
+            for key, value in featureDict.items():
+                if value == None:
+                    featureDict[key] = 'NULL'
+            
             print featureDict
             featuresDicts.append( featureDict )
         
