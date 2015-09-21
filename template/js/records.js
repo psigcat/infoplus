@@ -5,33 +5,33 @@
 
 var recordsTable = dc.dataTable('.dc-data-table');
 var layerId = null,
-    jsonFromPython = null,
+    json = null,
     currentCat = null;
 
 function showRecords(layerId, jsonFromPython) {
     layerId = layerId;
-    jsonFromPython = jsonFromPython;
+    json = JSON.parse(jsonFromPython);
     
     console.log(layerId);
-    console.log(jsonFromPython);
+    console.log(json);
     
-    if (jsonFromPython.length == 0) {
+    if (json.length == 0) {
         return;
     }
     
     // check column of the JSON records
-    var genericRecord = jsonFromPython[0];
+    var genericRecord = json[0];
     var columns = Object.keys(genericRecord);
     
     //### Create Crossfilter Dimensions and Groups
 
     //See the [crossfilter API](https://github.com/square/crossfilter/wiki/API-Reference) for reference.
-    var ndx = crossfilter(jsonFromPython);
+    var ndx = crossfilter(json);
     var all = ndx.groupAll();
 
     // Dimension by full ids
     var catDimension = ndx.dimension(function (d) {
-        return d.cat;
+        return d.featureId;
     });
         
     //#### Data Table
@@ -41,11 +41,11 @@ function showRecords(layerId, jsonFromPython) {
                 return 'Category Index';
             })
             // (_optional_) max number of records to be shown, `default = 25`
-            .size(jsonFromPython.length)
+            .size(json.length)
         .columns(columns)
         // (_optional_) sort using the given field, `default = function(d){return d;}`
         .sortBy(function (d) {
-            return d.cat;
+            return d.featureId;
         })
         // (_optional_) sort order, `default = d3.ascending`
         .order(d3.ascending)
@@ -61,7 +61,7 @@ function showRecords(layerId, jsonFromPython) {
     
     // #### add listener to manage zooming / centering
     d3.selectAll('.dc-table-row').on('click', function() {
-       // get cat value to find it in the layer features
+       // get featureId value to find it in the layer features
        // beaware that it is text not converted as integer
        currentCat = d3.select(this).select('.dc-table-column._0').text();
        

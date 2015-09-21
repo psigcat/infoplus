@@ -35,11 +35,11 @@ class RecordsDisplayWidgetBridge(QtCore.QObject):
         super(RecordsDisplayWidgetBridge, self).__init__()
         
     @QtCore.pyqtSlot(str, str)
-    def setSelctedRecord(self, layerId=None, cat=None):
+    def setSelctedRecord(self, layerId=None, featureId=None):
         '''
-        slot emitted by JS to communicate the current Layer/cat selected in the interface
+        slot emitted by JS to communicate the current Layer/featureId selected in the interface
         '''
-        QgsLogger.debug("RecordsDisplayWidgetBridge.setSelctedRecord: Selected layerId = {} and record cat {}".format(layerId, cat), 3)
+        QgsLogger.debug("RecordsDisplayWidgetBridge.setSelctedRecord: Selected layerId = {} and record id {}".format(layerId, featureId), 3)
         
-        if layerId and cat:
-            self.selectedRecord.emit(layerId, cat)
+        if layerId and featureId:
+            self.selectedRecord.emit(layerId, featureId)

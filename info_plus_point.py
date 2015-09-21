@@ -21,7 +21,7 @@ class InfoPlusPoint(QgsMapTool):
         self.recordsDisplayWidgetBridge = None
         self.newPage = None
         self.selectedLayerId = None
-        self.selectedCat = None
+        self.selectedFeatureId = None
     
     def canvasPressEvent(self, e):
     
@@ -55,7 +55,7 @@ class InfoPlusPoint(QgsMapTool):
     def zoomSelectedFeature(self):
         ''' zoom to the selected feature
         '''
-        if not self.selectedLayerId or not self.selectedCat:
+        if not self.selectedLayerId or not self.selectedFeatureId:
             return
         
         # for now... do nothing!
@@ -63,7 +63,7 @@ class InfoPlusPoint(QgsMapTool):
     def centerSelectedFeature(self):
         ''' pan to the selected feature
         '''
-        if (not self.selectedLayerId) or (not self.selectedCat):
+        if (not self.selectedLayerId) or (not self.selectedFeatureId):
             return
         
         # get current selected layer
@@ -71,9 +71,8 @@ class InfoPlusPoint(QgsMapTool):
         if (not layer) or (not layer.isValid()):
             return
         
-        # get feature with the specific cat
-        expression = QgsExpression("\"cat\"='{}'".format(self.selectedCat))
-        request = QgsFeatureRequest(expression)
+        # get feature with the specific featureId
+        request = QgsFeatureRequest( self.selectedFeatureId )
         iterator = layer.getFeatures(request)
         try:
             feature = iterator.next()
@@ -98,13 +97,13 @@ class InfoPlusPoint(QgsMapTool):
         
         self.canvas.refresh()
     
-    def setSelectedRecord(self, layerId, cat):
+    def setSelectedRecord(self, layerId, featureId):
         ''' Set current selected Record and layer
         '''
-        QgsLogger.debug("InfoPlusPoint.setSelectedRecord: Selected layerId = {} and record cat {}".format(layerId, cat), 3)
+        QgsLogger.debug("InfoPlusPoint.setSelectedRecord: Selected layerId = {} and record id {}".format(layerId, featureId), 3)
 
         self.selectedLayerId = layerId
-        self.selectedCat = cat
+        self.selectedFeatureId = int(featureId)
     
     def processLayers(self):
         
@@ -135,8 +134,11 @@ class InfoPlusPoint(QgsMapTool):
         for i, feature in enumerate(layer.selectedFeatures()):
             print "Feature "+str(i)+ " of "+str(total)
             
+            items = [('featureId', feature.id())]
             values = feature.attributes()
-            featureDict = OrderedDict(zip(columns, values))
+            items.extend( zip(columns, values) )
+            featureDict = OrderedDict(items)
+            
             print featureDict
             featuresDicts.append( featureDict )
         
@@ -155,7 +157,7 @@ class InfoPlusPoint(QgsMapTool):
             # then render records
             jsonString = json.dumps(featuresDicts)
             
-            JsCommand = "showRecords('%s', %s)" % (layerId, jsonString)
+            JsCommand = "showRecords('%s', '%s')" % (layerId, jsonString)
             QgsLogger.debug(self.tr("display records with with JS command: %s" % JsCommand), 3)
             
             self.newPage.webView.page().mainFrame().evaluateJavaScript(JsCommand)
