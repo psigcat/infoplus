@@ -1,12 +1,30 @@
 'use strict';
 
 /* jshint globalstrict: true */
-/* global dc,d3,crossfilter,colorbrewer */
 
-var recordsTable = dc.dataTable('.dc-data-table');
 var layerId = null,
-    json = null,
-    currentCat = null;
+    currentCat = null,
+    json = null;
+
+var margin = {top: 10, right: 5, bottom: 0, left: 0},
+    width = 960 - margin.left - margin.right,
+    barHeight = 20,
+    barWidth = width * .8;
+
+var i = 0,
+    duration = 400,
+    root;
+
+var tree = d3.layout.tree()
+    .nodeSize([0, 20]);
+
+var diagonal = d3.svg.diagonal()
+    .projection(function(d) { return [d.y, d.x]; });
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
 function showRecords(layerId, jsonFromPython) {
     layerId = layerId;
@@ -19,57 +37,137 @@ function showRecords(layerId, jsonFromPython) {
         return;
     }
     
-    // check column of the JSON records
-    var genericRecord = json[0];
-    var columns = Object.keys(genericRecord);
+    // add some coord parameters to json necessary to tree visualization
+    json.x0 = 0;
+    json.y0 = 0;
     
-    //### Create Crossfilter Dimensions and Groups
-
-    //See the [crossfilter API](https://github.com/square/crossfilter/wiki/API-Reference) for reference.
-    var ndx = crossfilter(json);
-    var all = ndx.groupAll();
-
-    // Dimension by full ids
-    var catDimension = ndx.dimension(function (d) {
-        return d.featureId;
-    });
-        
-    //#### Data Table
-    recordsTable /* dc.dataTable('.dc-data-table', 'chartGroup') */
-        .dimension(catDimension)
-            .group(function (d) {
-                return 'Category Index';
-            })
-            // (_optional_) max number of records to be shown, `default = 25`
-            .size(json.length)
-        .columns(columns)
-        // (_optional_) sort using the given field, `default = function(d){return d;}`
-        .sortBy(function (d) {
-            return d.featureId;
-        })
-        // (_optional_) sort order, `default = d3.ascending`
-        .order(d3.ascending)
-        // (_optional_) custom renderlet to post-process chart using [D3](http://d3js.org)
-        .on('renderlet', function (table) {
-            table.selectAll('.dc-table-group').classed('info', true);
-        });
-
-    //#### Rendering
-
-    //simply call `.renderAll()` to render all charts on the page
-    dc.renderAll();
-    
-    // #### add listener to manage zooming / centering
-    d3.selectAll('.dc-table-row').on('click', function() {
-       // get featureId value to find it in the layer features
-       // beaware that it is text not converted as integer
-       currentCat = d3.select(this).select('.dc-table-column._0').text();
-       
-       // do some selection/hilight of the current row
-       // changing some param
-       
-       console.log(layerId, currentCat)
-       
-       recordsDisplayWidgetBridge.setSelctedRecord(layerId, currentCat)
-    });
+    // show the tree
+    update(root = json);
 };
+
+function update(source) {
+
+  // Compute the flattened node list. TODO use d3.layout.hierarchy.
+  var nodes = tree.nodes(root);
+  
+  var height = Math.max(500, nodes.length * barHeight + margin.top + margin.bottom);
+
+  d3.select("svg").transition()
+      .duration(duration)
+      .attr("height", height);
+
+  d3.select(self.frameElement).transition()
+      .duration(duration)
+      .style("height", height + "px");
+
+  // Compute the "layout".
+  nodes.forEach(function(n, i) {
+    n.x = i * barHeight;
+  });
+
+  // Update the nodes…
+  var node = svg.selectAll("g.node")
+      .data(nodes, function(d) { return d.id || (d.id = ++i); });
+
+  var nodeEnter = node.enter().append("g")
+      .attr("class", "node")
+      .attr("transform", function(d) { return "translate(" + source.y0 + "," + source.x0 + ")"; })
+      .style("opacity", 1e-6);
+
+  // Enter any new nodes at the parent's previous position.
+  nodeEnter.append("rect")
+      .attr("y", -barHeight / 2)
+      .attr("height", barHeight)
+      .attr("width", barWidth)
+      .style("fill", color)
+      .on("click", click);
+  
+  // show node name and value if it exists
+  nodeEnter.append("text")
+      .classed('fieldname', true)
+      .attr("dy", 3.5)
+      .attr("dx", 5.5)
+      .text(function(d) {
+          return d.name;
+      });
+      
+  nodeEnter.append("text")
+      .classed('fieldvalue', true)
+      .attr("dy", 3.5)
+      .attr("dx", 120)
+      .text(function(d) {
+          return d.value;
+      });
+
+  // Transition nodes to their new position.
+  nodeEnter.transition()
+      .duration(duration)
+      .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
+      .style("opacity", 1);
+
+  node.transition()
+      .duration(duration)
+      .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
+      .style("opacity", 1)
+    .select("rect")
+      .style("fill", color);
+
+  // Transition exiting nodes to the parent's new position.
+  node.exit().transition()
+      .duration(duration)
+      .attr("transform", function(d) { return "translate(" + source.y + "," + source.x + ")"; })
+      .style("opacity", 1e-6)
+      .remove();
+
+  // Update the links…
+  var link = svg.selectAll("path.link")
+      .data(tree.links(nodes), function(d) { return d.target.id; });
+
+  // Enter any new links at the parent's previous position.
+  link.enter().insert("path", "g")
+      .attr("class", "link")
+      .attr("d", function(d) {
+        var o = {x: source.x0, y: source.y0};
+        return diagonal({source: o, target: o});
+      })
+    .transition()
+      .duration(duration)
+      .attr("d", diagonal);
+
+  // Transition links to their new position.
+  link.transition()
+      .duration(duration)
+      .attr("d", diagonal);
+
+  // Transition exiting nodes to the parent's new position.
+  link.exit().transition()
+      .duration(duration)
+      .attr("d", function(d) {
+        var o = {x: source.x, y: source.y};
+        return diagonal({source: o, target: o});
+      })
+      .remove();
+
+  // Stash the old positions for transition.
+  nodes.forEach(function(d) {
+    d.x0 = d.x;
+    d.y0 = d.y;
+  });
+};
+
+// Toggle children on click.
+function click(d) {
+  if (d.children) {
+    d._children = d.children;
+    d.children = null;
+  } else {
+    d.children = d._children;
+    d._children = null;
+  }
+  update(d);
+}
+
+function color(d) {
+  return d._children ? "#3182bd" : d.children ? "#c6dbef" : "#fd8d3c";
+  //return d._children ? "#3182bd" : d.children ? "#c6dbef" : "#ffffff";
+}

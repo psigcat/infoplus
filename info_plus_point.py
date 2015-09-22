@@ -107,7 +107,7 @@ class InfoPlusPoint(QgsMapTool):
     
     def processLayers(self):
         
-        # clean all toolBox elements if any starting from the last
+        # clean all toolBox elements if any, starting from the last
         # to avoid index invalidation 
         for index in range(self.dlg.tbMain.count() - 1, -1, -1):
             self.dlg.tbMain.removeItem(index)
@@ -123,10 +123,54 @@ class InfoPlusPoint(QgsMapTool):
                 aux = layer.name()+" ("+str(layer.selectedFeatureCount())+")" 
                 self.newPage = RecordsDisplayWidget(self.iface.mainWindow())
                 self.newPage.setObjectName("page_"+str(i))
-                self.processLayer(layer)
+                self.processLayer_asAccordion(layer)
                 self.dlg.tbMain.addItem(self.newPage, aux)
                 
-    def processLayer(self, layer):
+    def processLayer_asAccordion(self, layer):
+        # Get selected features of current layers
+        columns = [field.name() for field in layer.pendingFields().toList()]
+        total = len(layer.selectedFeatures())
+        features = {'name': 'Records',
+                    'children': []}
+        for i, feature in enumerate(layer.selectedFeatures()):
+            print "Feature "+str(i)+ " of "+str(total)
+            
+            item = {'name': 'id: {}'.format(feature.id()),
+                    'children': []} 
+            
+            # add records
+            values = feature.attributes()
+            namedValues = zip(columns, values)
+            
+            for key, value in namedValues:
+                record = {'name': key,
+                          'value': value if value != None else 'NULL'}
+                item['children'].append(record)
+                
+            print item
+            features['children'].append( item )
+        
+        if len(features) == 0:
+            return
+        
+        self.processFeatures_asAccordion(layer.id(), features)
+        
+    def processFeatures_asAccordion(self, layerId, featuresDicts):
+        ''' Push record in the webView
+        '''
+        if self.newPage:
+            # first inject bridge object
+            self.newPage.webView.page().mainFrame().addToJavaScriptWindowObject("recordsDisplayWidgetBridge", self.recordsDisplayWidgetBridge)
+            
+            # then render records
+            jsonString = json.dumps(featuresDicts)
+            
+            JsCommand = "showRecords('%s', '%s')" % (layerId, jsonString)
+            QgsLogger.debug(self.tr("display records with with JS command: %s" % JsCommand), 3)
+            
+            self.newPage.webView.page().mainFrame().evaluateJavaScript(JsCommand)
+    
+    def processLayer_asTable(self, layer):
         # Get selected features of current layers
         columns = [field.name() for field in layer.pendingFields().toList()]
         total = len(layer.selectedFeatures())
@@ -151,7 +195,7 @@ class InfoPlusPoint(QgsMapTool):
         
         self.processFeatures(layer.id(), featuresDicts)
         
-    def processFeatures(self, layerId, featuresDicts):
+    def processFeatures_asTable(self, layerId, featuresDicts):
         ''' Push record in the webView
         '''
         if self.newPage:
