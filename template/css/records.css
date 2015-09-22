@@ -6,13 +6,14 @@
   #stroke-width: 1.5px;
 }
 
-.node fieldvalue {
-  fill: #666;
-}
+/*.fieldvalue {
+  font: 12px sans-serif;
+  fill: #000;
+}*/
 
 .node text {
   font: 12px sans-serif;
-  pointer-events: none;
+  #pointer-events: none;
 }
 
 path.link {

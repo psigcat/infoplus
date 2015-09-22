@@ -84,7 +84,7 @@ function update(source) {
   
   // show node name and value if it exists
   nodeEnter.append("text")
-      .classed('fieldname', true)
+      .attr('class', 'fieldname')
       .attr("dy", 3.5)
       .attr("dx", 5.5)
       .text(function(d) {
@@ -92,7 +92,7 @@ function update(source) {
       });
       
   nodeEnter.append("text")
-      .classed('fieldvalue', true)
+      .attr('class', 'fieldvalue')
       .attr("dy", 3.5)
       .attr("dx", 120)
       .text(function(d) {
