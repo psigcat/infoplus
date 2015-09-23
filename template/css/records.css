@@ -6,15 +6,26 @@
   #stroke-width: 1.5px;
 }
 
-/*.fieldvalue {
+.selected {
+  #font: 33px sans-serif;
+  #font-weight: 900;
+  fill: #DAA520; # GoldenRod
+}
+.fieldname text {
   font: 12px sans-serif;
   fill: #000;
-}*/
+}
+
+.fieldvalue {
+  font: 12px sans-serif;
+  fill: #000;
+}
 
 .node text {
   font: 12px sans-serif;
   #pointer-events: none;
 }
+
 
 path.link {
   fill: none;

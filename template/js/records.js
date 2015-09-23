@@ -3,7 +3,7 @@
 /* jshint globalstrict: true */
 
 var layerId = null,
-    currentCat = null,
+    featureId = null,
     json = null;
 
 var margin = {top: 10, right: 5, bottom: 0, left: 0},
@@ -26,8 +26,8 @@ var svg = d3.select("body").append("svg")
   .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-function showRecords(layerId, jsonFromPython) {
-    layerId = layerId;
+function showRecords(layerIdFromPython, jsonFromPython) {
+    layerId = layerIdFromPython;
     json = JSON.parse(jsonFromPython);
     
     console.log(layerId);
@@ -50,6 +50,9 @@ function update(source) {
   // Compute the flattened node list. TODO use d3.layout.hierarchy.
   var nodes = tree.nodes(root);
   
+  console.log('nodes')
+  console.log(nodes)
+  
   var height = Math.max(500, nodes.length * barHeight + margin.top + margin.bottom);
 
   d3.select("svg").transition()
@@ -66,46 +69,32 @@ function update(source) {
   });
 
   // Update the nodes…
-  var node = svg.selectAll("g.node")
+  var gNode = svg.selectAll("g.node")
       .data(nodes, function(d) { return d.id || (d.id = ++i); });
 
-  var nodeEnter = node.enter().append("g")
+  var nodeGroup = gNode.enter().append("g")
       .attr("class", "node")
       .attr("transform", function(d) { return "translate(" + source.y0 + "," + source.x0 + ")"; })
       .style("opacity", 1e-6);
 
   // Enter any new nodes at the parent's previous position.
-  nodeEnter.append("rect")
+  nodeGroup.append("svg:rect")
       .attr("y", -barHeight / 2)
       .attr("height", barHeight)
       .attr("width", barWidth)
       .style("fill", color)
-      .on("click", click);
+      .on("click", manageExpansion);
   
   // show node name and value if it exists
-  nodeEnter.append("text")
-      .attr('class', 'fieldname')
-      .attr("dy", 3.5)
-      .attr("dx", 5.5)
-      .text(function(d) {
-          return d.name;
-      });
+  nodeGroup.append(nodeGenerator);
       
-  nodeEnter.append("text")
-      .attr('class', 'fieldvalue')
-      .attr("dy", 3.5)
-      .attr("dx", 120)
-      .text(function(d) {
-          return d.value;
-      });
-
   // Transition nodes to their new position.
-  nodeEnter.transition()
+  nodeGroup.transition()
       .duration(duration)
       .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
       .style("opacity", 1);
 
-  node.transition()
+  gNode.transition()
       .duration(duration)
       .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
       .style("opacity", 1)
@@ -113,7 +102,7 @@ function update(source) {
       .style("fill", color);
 
   // Transition exiting nodes to the parent's new position.
-  node.exit().transition()
+  gNode.exit().transition()
       .duration(duration)
       .attr("transform", function(d) { return "translate(" + source.y + "," + source.x + ")"; })
       .style("opacity", 1e-6)
@@ -155,8 +144,103 @@ function update(source) {
   });
 };
 
+// add a id hiperlink node or a fieldName leaf node
+function nodeGenerator(d) {
+    
+    var element = d3.select(this);
+    
+    var currentNodeType =  kindOfNode(d);
+    
+    // if root node
+    if (currentNodeType == 'rootnode') {
+        var t = element.append('text')
+            .attr('class', currentNodeType)
+            .attr("dy", 3.5)
+            .attr("dx", 5.5)
+            .text(d.name);
+        return t.node();
+    }
+    
+    // if record id node
+    if (currentNodeType == 'recordid') {
+        var t = element.append('text')
+            .text(d.name) 
+            .attr('class', currentNodeType)
+            .attr("dy", 3.5)
+            .attr("dx", 5.5)
+            .on('click', selectRecord);
+        return t.node();
+    }
+    
+    // if record leaf node
+    if (currentNodeType == 'leafnode') {
+        var g = element.append('g');
+        g.append('text')
+            .attr('class', 'fieldname ' + currentNodeType)
+            .text(function() {return d.name;})
+            .attr("dy", 3.5)
+            .attr("dx", 5.5);
+        g.append('text')
+            .attr('class', 'fieldvalue ' + currentNodeType)
+            .text(function() {return d.value;})
+            .attr("dy", 3.5)
+            .attr("dx", 120.5);
+        return g.node();
+    }
+}
+
+// select current clicked record deselecting the others
+function selectRecord(d) {
+    // deselect all
+    d3.selectAll('.recordid')
+        .classed('selected', false);
+    
+    // select current
+    d3.select(this)
+        .classed('selected', true);
+        
+    // then set selected also the rect below the record
+    //d3.selectAll('rect')
+    //    .classed('selected', false);
+    //d3.select(this.parentNode).select('rect')
+    //    .classed('selected', true);
+    
+    // set current featureId selection
+    featureId = d3.select(this).text();
+    
+    console.log(layerId, featureId)
+       
+    recordsDisplayWidgetBridge.setSelctedRecord(layerId, featureId);
+}
+
+// return the updated class of the current node
+function kindOfClass(d) {
+    // get current class
+    var currentClass = d3.select(this).attr('class');
+    
+    var newClass = kindOfNode(d);
+    if (currentClass) {
+        newClass = currentClass + ' ' + newClass;
+    }
+    
+    return newClass;
+}
+
+function kindOfNode(d) {
+    if (!d.parent) {
+        return 'rootnode';
+    }
+    if (d.depth && d.depth == 1) {
+        return 'recordid';
+    }
+    if (!d.children) {
+        return 'leafnode';
+    }
+    return '';
+}
+
 // Toggle children on click.
-function click(d) {
+function manageExpansion(d) {
   if (d.children) {
     d._children = d.children;
     d.children = null;
@@ -169,5 +253,4 @@ function click(d) {
 
 function color(d) {
   return d._children ? "#3182bd" : d.children ? "#c6dbef" : "#fd8d3c";
-  //return d._children ? "#3182bd" : d.children ? "#c6dbef" : "#ffffff";
 }
