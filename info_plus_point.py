@@ -135,7 +135,7 @@ class InfoPlusPoint(QgsMapTool):
         for i, feature in enumerate(layer.selectedFeatures()):
             print "Feature "+str(i)+ " of "+str(total)
             
-            item = {'name': 'id: {}'.format(feature.id()),
+            item = {'name': feature.id(),
                     'children': []} 
             
             # add records
