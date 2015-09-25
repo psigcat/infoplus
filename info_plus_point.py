@@ -1,4 +1,5 @@
 import json
+import time
 from collections import OrderedDict
 
 from qgis.gui import *
@@ -117,98 +118,15 @@ class InfoPlusPoint(QgsMapTool):
         self.recordsDisplayWidgetBridge.selectedRecord.connect(self.setSelectedRecord)
         
         # create and populate webpage
-        for i, layer in enumerate(self.layers):
+        for layer in self.layers:
             # If have any feature selected
             if layer.selectedFeatureCount() > 0:
+                self.newPage = RecordsDisplayWidget(layer, self.recordsDisplayWidgetBridge, self.iface.mainWindow())
+                self.newPage.setObjectName('page_' + layer.id())
+                
+                # set tab name witht the record count
                 aux = layer.name()+" ("+str(layer.selectedFeatureCount())+")" 
-                self.newPage = RecordsDisplayWidget(self.iface.mainWindow())
-                self.newPage.setObjectName("page_"+str(i))
-                self.processLayer_asAccordion(layer)
                 self.dlg.tbMain.addItem(self.newPage, aux)
-                
-    def processLayer_asAccordion(self, layer):
-        # Get selected features of current layers
-        columns = [field.name() for field in layer.pendingFields().toList()]
-        total = len(layer.selectedFeatures())
-        features = {'name': 'Records',
-                    'children': []}
-        for i, feature in enumerate(layer.selectedFeatures()):
-            print "Feature "+str(i)+ " of "+str(total)
-            
-            item = {'name': feature.id(),
-                    'children': []} 
-            
-            # add records
-            values = feature.attributes()
-            namedValues = zip(columns, values)
-            
-            for key, value in namedValues:
-                record = {'name': key,
-                          'value': value if value != None else 'NULL'}
-                item['children'].append(record)
-                
-            print item
-            features['children'].append( item )
-        
-        if len(features) == 0:
-            return
-        
-        self.processFeatures_asAccordion(layer.id(), features)
-        
-    def processFeatures_asAccordion(self, layerId, featuresDicts):
-        ''' Push record in the webView
-        '''
-        if self.newPage:
-            # first inject bridge object
-            self.newPage.webView.page().mainFrame().addToJavaScriptWindowObject("recordsDisplayWidgetBridge", self.recordsDisplayWidgetBridge)
-            
-            # then render records
-            jsonString = json.dumps(featuresDicts)
-            
-            JsCommand = "showRecords('%s', '%s')" % (layerId, jsonString)
-            QgsLogger.debug(self.tr("display records with with JS command: %s" % JsCommand), 3)
-            
-            self.newPage.webView.page().mainFrame().evaluateJavaScript(JsCommand)
-    
-    def processLayer_asTable(self, layer):
-        # Get selected features of current layers
-        columns = [field.name() for field in layer.pendingFields().toList()]
-        total = len(layer.selectedFeatures())
-        featuresDicts = []
-        for i, feature in enumerate(layer.selectedFeatures()):
-            print "Feature "+str(i)+ " of "+str(total)
-            
-            items = [('featureId', feature.id())]
-            values = feature.attributes()
-            items.extend( zip(columns, values) )
-            featureDict = OrderedDict(items)
-            
-            for key, value in featureDict.items():
-                if value == None:
-                    featureDict[key] = 'NULL'
-            
-            print featureDict
-            featuresDicts.append( featureDict )
-        
-        if len(featuresDicts) == 0:
-            return
-        
-        self.processFeatures(layer.id(), featuresDicts)
-        
-    def processFeatures_asTable(self, layerId, featuresDicts):
-        ''' Push record in the webView
-        '''
-        if self.newPage:
-            # first inject bridge object
-            self.newPage.webView.page().mainFrame().addToJavaScriptWindowObject("recordsDisplayWidgetBridge", self.recordsDisplayWidgetBridge)
-            
-            # then render records
-            jsonString = json.dumps(featuresDicts)
-            
-            JsCommand = "showRecords('%s', '%s')" % (layerId, jsonString)
-            QgsLogger.debug(self.tr("display records with with JS command: %s" % JsCommand), 3)
-            
-            self.newPage.webView.page().mainFrame().evaluateJavaScript(JsCommand)
     
     def processFeature(self, feature):
         
