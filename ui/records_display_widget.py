@@ -59,6 +59,12 @@ class RecordsDisplayWidget(QtGui.QWidget, FORM_CLASS):
         # first inject bridge object
         self.webView.page().mainFrame().addToJavaScriptWindowObject("recordsDisplayWidgetBridge", self._recordsDisplayWidgetBridge)
         
+        # wait a wile before loading records.
+        QtCore.QTimer.singleShot(100, self._displayRecords)
+        
+    def _displayRecords(self):
+        ''' after a wile show records... this give time that the bridge is available in JS
+        '''
         if self._layer.selectedFeatureCount():
             # then prepare selected records in structure usefut for accordion visualization
             featuresDict = self._prepareFeatures_asAccordion()
@@ -76,7 +82,7 @@ class RecordsDisplayWidget(QtGui.QWidget, FORM_CLASS):
             QgsLogger.debug(self.tr("No features selected to display for layer: %s" % self._layer.id()), 1)
 
         # then we can say that the load is completed
-        self._ready = success
+        self._ready = True
         
         # notify it is ready
         self.ready.emit(self._ready)
