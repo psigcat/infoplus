@@ -13,9 +13,10 @@ from template.records_display_widget_bridge import RecordsDisplayWidgetBridge
 
 class InfoPlusPoint(QgsMapTool):
 
-    def __init__(self, canvas, action):
+    def __init__(self, canvas, action, settings):
         self.canvas = canvas
         self.active = False
+        self.settings = settings
         QgsMapTool.__init__(self, self.canvas)
         self.setAction(action)
         
@@ -23,7 +24,16 @@ class InfoPlusPoint(QgsMapTool):
         self.newPage = None
         self.selectedLayerId = None
         self.selectedFeatureId = None
+        self.defaultZoomScale = None
+        
+        self.loadInfoPlusPointSettings()
     
+    def loadInfoPlusPointSettings(self):
+        ''' Load plugin settings
+        '''      
+        # get initial Scale
+        self.defaultZoomScale = self.settings.value('status/defaultZoomScale', 2500)
+
     def canvasPressEvent(self, e):
     
         p = self.toMapCoordinates(e.pos())      
@@ -43,8 +53,8 @@ class InfoPlusPoint(QgsMapTool):
         self.dlg = InfoPlusDialog()
         
         # add listener to selected layer/record
-        self.dlg.center_PButton.clicked.connect(self.centerSelectedFeature)
-        self.dlg.zoom_PButton.clicked.connect(self.zoomSelectedFeature)
+        self.dlg.center_PButton.clicked.connect(self.doZoomCenterAction)
+        self.dlg.zoom_PButton.clicked.connect(self.doZoomCenterAction)
         
         # Iterate over all layers
         self.layers = self.iface.mapCanvas().layers()
@@ -53,16 +63,9 @@ class InfoPlusPoint(QgsMapTool):
         # Show dialog
         self.dlg.show()
     
-    def zoomSelectedFeature(self):
-        ''' zoom to the selected feature
-        '''
-        if not self.selectedLayerId or not self.selectedFeatureId:
-            return
-        
-        # for now... do nothing!
-    
-    def centerSelectedFeature(self):
-        ''' pan to the selected feature
+
+    def doZoomCenterAction(self):
+        ''' pan or zoom to the selected feature. Depend on sender
         '''
         if (not self.selectedLayerId) or (not self.selectedFeatureId):
             return
@@ -88,15 +91,19 @@ class InfoPlusPoint(QgsMapTool):
         if (geometry.type == QGis.UnknownGeometry) or (geometry.type == QGis.NoGeometry):
             return
         
-        # if point or line 
-        if (geometry.type == QGis.Point) or (geometry.type == QGis.Line):
-            centroid = geometry.centroid().asPoint()
-            self.canvas.setCenter(centroid)
-        else:
-            bbox = geometry.boundingBox()
-            self.canvas.setExtent(bbox)
+        # distinguish if action have to be center or zoom
+        centroid = geometry.centroid().asPoint()
+
+        self.canvas.setCenter(centroid)
+        if self.sender().objectName() == 'zoom_PButton':
+            # scale of bbox depending on geom type
+            if geometry.type == QGis.Point:
+                self.iface.mapCanvas().zoomScale( float(self.defaultZoomScale) )
+            else:
+                self.canvas.setExtent( geometry.boundingBox() )
         
         self.canvas.refresh()
+
     
     def setSelectedRecord(self, layerId, featureId):
         ''' Set current selected Record and layer

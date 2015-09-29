@@ -70,11 +70,8 @@ class InfoPlus(QObject):
         
         # load local settings of the plugin
         settingFile = os.path.join(self.plugin_dir, 'config', 'infoplus.config')
-        #self.settings = QSettings(settingFile, QSettings.IniFormat)
-        #self.settings.setIniCodec(sys.stdout.encoding)
-        
-        # load plugin settings
-        # self.loadPluginSettings()
+        self.settings = QSettings(settingFile, QSettings.IniFormat)
+        self.settings.setIniCodec(sys.getfilesystemencoding())
         
         # Declare instance attributes
         self.actions = []
@@ -100,13 +97,6 @@ class InfoPlus(QObject):
         # avoid caching webpages of the PopUp webview
 #         QtWebKit.QWebSettings.setMaximumPagesInCache( 0 );
 #         QtWebKit.QWebSettings.setObjectCacheCapacities( 0, 0, 0 );
-
-    def loadPluginSettings(self):
-        ''' Load plugin settings
-        '''      
-        # get initial Scale
-        self.defaultZoomScale = self.settings.value('status/defaultZoomScale', 2500)
-        
 
     def createToolButton(self, parent, text):
         button = QToolButton(parent)
@@ -142,7 +132,7 @@ class InfoPlus(QObject):
         icon_path2 = ':/plugins/InfoPlus/icon_infoplus2.png'        
         self.actionRectangle = self.createAction(icon_path2, u"Multiple Selection by Rectangle", self.runRectangle)   
 
-        self.toolPoint = InfoPlusPoint(self.iface.mapCanvas(), self.actionPoint) 
+        self.toolPoint = InfoPlusPoint(self.iface.mapCanvas(), self.actionPoint, self.settings) 
         self.toolRectangle = InfoPlusRectangle(self.iface.mapCanvas(), self.actionRectangle) 
         self.toolPoint.setInterface(self.iface)
         #self.toolRectangle.setInterface(self.iface)        
