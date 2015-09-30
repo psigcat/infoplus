@@ -176,15 +176,28 @@ function nodeGenerator(d) {
     if (currentNodeType == 'leafnode') {
         var g = element.append('g');
         g.append('text')
-            .attr('class', 'fieldname ' + currentNodeType)
+            .classed('fieldname', true)
             .text(function() {return d.name;})
             .attr("dy", 3.5)
             .attr("dx", 5.5);
-        g.append('text')
-            .attr('class', 'fieldvalue ' + currentNodeType)
-            .text(function() {return d.value;})
-            .attr("dy", 3.5)
-            .attr("dx", 120.5);
+        
+        // check what to add depending if it's pdf or link
+        if ( !IsURL( d.value )) {
+            g.append('text')
+                .classed('fieldvalue ', true)
+                .text(d.value)
+                .attr("dy", 3.5)
+                .attr("dx", 120.5);
+        } else {
+            g.append('a')
+                .attr('xlink:href', d.value)
+                .classed('link', true)
+                .classed('fieldvalue ', true)
+                .append('text')
+                    .text(d.value)
+                    .attr("dy", 3.5)
+                    .attr("dx", 120.5);
+        }
         return g.node();
     }
 }
@@ -254,3 +267,18 @@ function manageExpansion(d) {
 function color(d) {
   return d._children ? "#3182bd" : d.children ? "#c6dbef" : "#fd8d3c";
 }
+
+function IsURL(url) {
+    var strRegex = "^((https|http|ftp|rtsp|mms)?://)"
+        + "?(([0-9a-z_!~*'().&=+$%-]+: )?[0-9a-z_!~*'().&=+$%-]+@)?" //ftp user@
+        + "(([0-9]{1,3}\.){3}[0-9]{1,3}" // IP URL- 199.194.52.184
+        + "|" // DOMAIN
+        + "([0-9a-z_!~*'()-]+\.)*"
+        + "([0-9a-z][0-9a-z-]{0,61})?[0-9a-z]\."
+        + "[a-z]{2,6})" // first level domain- .com or .museum
+        + "(:[0-9]{1,4})?" // port - :80
+        + "((/?)|" // a slash isn't required if there is no file name
+        + "(/[0-9a-z_!~*'().;?:@&=+$,%#-]+)+/?)$";
+     var re=new RegExp(strRegex);
+     return re.test(url);
+ }
