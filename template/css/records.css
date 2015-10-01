@@ -16,6 +16,10 @@
   fill: #000;
 }
 
+.fieldvalue.link {
+  font: 12px sans-serif;
+  fill: #0000FF;
+}
 .fieldvalue {
   font: 12px sans-serif;
   fill: #000;
