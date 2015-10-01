@@ -195,11 +195,23 @@ function nodeGenerator(d) {
                 .classed('fieldvalue ', true)
                 .append('text')
                     .text(d.value)
+                    .on('click', notifyLinkClicked)
                     .attr("dy", 3.5)
                     .attr("dx", 120.5);
         }
         return g.node();
     }
+}
+
+// notify that a link has been clicked
+function notifyLinkClicked(d) {
+    // knowing data organization, browsing data, I can recover record Id
+    var featureId = d.parent.parent.children[0].name;
+    var link = d.value;
+    
+    console.log(layerId, featureId, link);
+       
+    recordsDisplayWidgetBridge.notifyLinkClicked(layerId, featureId, link);
 }
 
 // select current clicked record deselecting the others

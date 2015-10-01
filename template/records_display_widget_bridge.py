@@ -29,6 +29,7 @@ class RecordsDisplayWidgetBridge(QtCore.QObject):
     ''' Class used to receive statistic modification from JS and bridge to Python
     '''
     selectedRecord = QtCore.pyqtSignal(str, str)    
+    linkClicked = QtCore.pyqtSignal(str, str, str)    
 
     def __init__(self):
         """Constructor."""
@@ -43,3 +44,16 @@ class RecordsDisplayWidgetBridge(QtCore.QObject):
         
         if layerId and featureId:
             self.selectedRecord.emit(layerId, featureId)
+
+    @QtCore.pyqtSlot(str, str, str)
+    def notifyLinkClicked(self, layerId=None, featureId=None, link=None):
+        '''
+        slot emitted by JS to communicate that a huiperlink has been clicked.
+        event return the Layer/featureId of the click and the web address clicked
+        '''
+        print layerId, featureId, link
+        
+        QgsLogger.debug("RecordsDisplayWidgetBridge.notifyClicked: Clicked hyperlnk = {} on layerId = {} and record id {}".format(link, layerId, featureId), 3)
+        
+        if layerId and featureId and link:
+            self.linkClicked.emit(layerId, featureId, link)
