@@ -65,7 +65,7 @@ class RecordsDisplayWidget(QtGui.QWidget, FORM_CLASS):
         self.webView.page().mainFrame().addToJavaScriptWindowObject("recordsDisplayWidgetBridge", self._recordsDisplayWidgetBridge)
         
         # wait a wile before loading records.
-        QtCore.QTimer.singleShot(100, self._displayRecords)
+        QtCore.QTimer.singleShot(200, self._displayRecords)
         
     def _displayRecords(self):
         ''' after a wile show records... this give time that the bridge is available in JS
