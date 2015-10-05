@@ -6,6 +6,8 @@ from PyQt4 import QtCore, QtGui, uic
 
 from qgis.core import QgsLogger
 
+from template.records_display_widget_bridge import RecordsDisplayWidgetBridge 
+
 FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), 'records_display_widget.ui'))
 
 class RecordsDisplayWidget(QtGui.QWidget, FORM_CLASS):
@@ -13,15 +15,18 @@ class RecordsDisplayWidget(QtGui.QWidget, FORM_CLASS):
     # signal emitted quen the webView is compleated loaded
     ready = QtCore.pyqtSignal(bool)
     
-    def __init__(self, layer, recordsDisplayWidgetBridge, parent):
+    def __init__(self, layer, parent):
         """Constructor."""
         super(RecordsDisplayWidget, self).__init__(parent)
         self.setupUi(self)
         
         # status flags
         self._layer = layer
+        self._selectedLayerId = None
+        self._selectedFeatureId = None
         self._ready = False
-        self._recordsDisplayWidgetBridge = recordsDisplayWidgetBridge
+        self._recordsDisplayWidgetBridge = RecordsDisplayWidgetBridge()
+        self._recordsDisplayWidgetBridge.selectedRecord.connect(self._setSelectedRecord)
         
         # att HTML template and JS code to the web view
         self.initWebView()
@@ -112,6 +117,19 @@ class RecordsDisplayWidget(QtGui.QWidget, FORM_CLASS):
         
         return featuresDict
 
+    def _setSelectedRecord(self, layerId, featureId):
+        ''' Set current selected Record and layer
+        '''
+        QgsLogger.debug("RecordsDisplayWidget._setSelectedRecord: Selected layerId = {} and record id {}".format(layerId, featureId), 3)
+
+        self._selectedLayerId = layerId
+        self._selectedFeatureId = int(featureId)
+    
+    def getSelection(self):
+        ''' return current selection touple (that can be none,none if no selection)
+        '''
+        return self._selectedLayerId, self._selectedFeatureId
+    
 #################################################################
 # OLD CODE TO SHOW RECORDS USING DC.JS
 # have to be updated to the new style to load the page

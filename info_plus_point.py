@@ -8,7 +8,6 @@ from PyQt4.Qt import *
 
 from ui.info_plus_dialog import InfoPlusDialog
 from ui.records_display_widget import RecordsDisplayWidget
-from template.records_display_widget_bridge import RecordsDisplayWidgetBridge 
 
 
 class InfoPlusPoint(QgsMapTool):
@@ -20,10 +19,6 @@ class InfoPlusPoint(QgsMapTool):
         QgsMapTool.__init__(self, self.canvas)
         self.setAction(action)
         
-        self.recordsDisplayWidgetBridge = None
-        self.newPage = None
-        self.selectedLayerId = None
-        self.selectedFeatureId = None
         self.defaultZoomScale = None
         
         self.loadInfoPlusPointSettings()
@@ -67,17 +62,23 @@ class InfoPlusPoint(QgsMapTool):
     def doZoomCenterAction(self):
         ''' pan or zoom to the selected feature. Depend on sender
         '''
-        if (not self.selectedLayerId) or (not self.selectedFeatureId):
+        # get current selection from current QToolBox
+        currentPage = self.dlg.tbMain.currentWidget()
+        (selectedLayerId, selectedFeatureId) = currentPage.getSelection()
+        
+        QgsLogger.debug("InfoPlusPoint.doZoomCenterAction: Selected layerId = {} and record id {}".format(selectedLayerId, selectedFeatureId), 3)
+        
+        # check if something is selected
+        if (not selectedLayerId) or (not selectedFeatureId):
             return
         
         # get current selected layer
-        layer = QgsMapLayerRegistry.instance().mapLayer(self.selectedLayerId)
+        layer = QgsMapLayerRegistry.instance().mapLayer(selectedLayerId)
         if (not layer) or (not layer.isValid()):
             return
         
         # get feature with the specific featureId
-        request = QgsFeatureRequest( self.selectedFeatureId )
-        iterator = layer.getFeatures(request)
+        iterator = layer.getFeatures( QgsFeatureRequest( selectedFeatureId ) )
         try:
             feature = iterator.next()
         except:
@@ -105,14 +106,6 @@ class InfoPlusPoint(QgsMapTool):
         self.canvas.refresh()
 
     
-    def setSelectedRecord(self, layerId, featureId):
-        ''' Set current selected Record and layer
-        '''
-        QgsLogger.debug("InfoPlusPoint.setSelectedRecord: Selected layerId = {} and record id {}".format(layerId, featureId), 3)
-
-        self.selectedLayerId = layerId
-        self.selectedFeatureId = int(featureId)
-    
     def processLayers(self):
         
         # clean all toolBox elements if any, starting from the last
@@ -120,31 +113,16 @@ class InfoPlusPoint(QgsMapTool):
         for index in range(self.dlg.tbMain.count() - 1, -1, -1):
             self.dlg.tbMain.removeItem(index)
         
-        # create unique bridge for all web pages
-        self.recordsDisplayWidgetBridge = RecordsDisplayWidgetBridge()
-        self.recordsDisplayWidgetBridge.selectedRecord.connect(self.setSelectedRecord)
-        
         # create and populate webpage
         for layer in self.layers:
             # If have any feature selected
             if layer.selectedFeatureCount() > 0:
-                self.newPage = RecordsDisplayWidget(layer, self.recordsDisplayWidgetBridge, self.iface.mainWindow())
-                self.newPage.setObjectName('page_' + layer.id())
+                newPage = RecordsDisplayWidget(layer, self.iface.mainWindow())
+                newPage.setObjectName('page_' + layer.id())
                 
                 # set tab name witht the record count
                 aux = layer.name()+" ("+str(layer.selectedFeatureCount())+")" 
-                self.dlg.tbMain.addItem(self.newPage, aux)
-    
-    def processFeature(self, feature):
-        
-        for field in feature.fields():
-            msg = field.name()+" - "+str(feature[field.name()])
-            print msg
-        print "\n----------------------------------------\n"            
-        #self.label = QtGui.QLabel(self.page_0)
-        #self.label.setGeometry(QtCore.QRect(20, 20, 221, 16))
-        #self.label.setObjectName(_fromUtf8("label"))
-        #self.tbMain.addItem(self.page_0, _fromUtf8(""))            
+                self.dlg.tbMain.addItem(newPage, aux)
     
     def setInterface(self, iface):
         self.iface = iface
