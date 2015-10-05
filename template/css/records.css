@@ -16,10 +16,18 @@
   fill: #000;
 }
 
+.fieldvalue.pdf {
+  font: 12px sans-serif;
+  fill: #DC143C; # crimson
+  cursor: 'pointer';
+}
+
 .fieldvalue.link {
   font: 12px sans-serif;
-  fill: #0000FF;
+  fill: #0000FF; # blue
+  cursor: 'alias';
 }
+
 .fieldvalue {
   font: 12px sans-serif;
   fill: #000;
