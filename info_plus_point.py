@@ -18,10 +18,9 @@ class InfoPlusPoint(QgsMapTool):
         self.settings = settings
         QgsMapTool.__init__(self, self.canvas)
         self.setAction(action)
-        
         self.defaultZoomScale = None
-        
         self.loadInfoPlusPointSettings()
+    
     
     def loadInfoPlusPointSettings(self):
         ''' Load plugin settings
@@ -29,6 +28,7 @@ class InfoPlusPoint(QgsMapTool):
         # get initial Scale
         self.defaultZoomScale = self.settings.value('status/defaultZoomScale', 2500)
 
+        
     def canvasPressEvent(self, e):
     
         p = self.toMapCoordinates(e.pos())      
@@ -78,7 +78,7 @@ class InfoPlusPoint(QgsMapTool):
             return
         
         # get feature with the specific featureId
-        iterator = layer.getFeatures( QgsFeatureRequest( selectedFeatureId ) )
+        iterator = layer.getFeatures(QgsFeatureRequest(selectedFeatureId))
         try:
             feature = iterator.next()
         except:
@@ -89,7 +89,7 @@ class InfoPlusPoint(QgsMapTool):
         geometry = feature.geometry()
         
         # skip if not valid
-        if (geometry.type == QGis.UnknownGeometry) or (geometry.type == QGis.NoGeometry):
+        if (geometry.type() == QGis.UnknownGeometry) or (geometry.type() == QGis.NoGeometry):
             return
         
         # distinguish if action have to be center or zoom
@@ -97,11 +97,11 @@ class InfoPlusPoint(QgsMapTool):
 
         self.canvas.setCenter(centroid)
         if self.sender().objectName() == 'zoom_PButton':
-            # scale of bbox depending on geom type
-            if geometry.type == QGis.Point:
-                self.iface.mapCanvas().zoomScale( float(self.defaultZoomScale) )
+            # scale of bbox depending on geom type           
+            if geometry.type() == QGis.Point:
+                self.iface.mapCanvas().zoomScale(float(self.defaultZoomScale))                    
             else:
-                self.canvas.setExtent( geometry.boundingBox() )
+                self.canvas.setExtent(geometry.boundingBox())
         
         self.canvas.refresh()
 

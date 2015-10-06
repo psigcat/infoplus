@@ -9,8 +9,8 @@
 [general]
 name=infoplus
 qgisMinimumVersion=2.0
-description=infoplus is a Plugin to enhance multiple identify features.
-about=
+description=infoplus is a Plugin that allows identify features from all layers.
+about=This plugin add a widget that allows identify features from all layers.
 version=0.1
 author=David Erill, Carlos Lopez
 email=daviderill79@gmail.com
@@ -29,7 +29,7 @@ homepage=https://github.com/psigcat/infoplus
 tracker=https://github.com/psigcat/infoplus/issues
 repository=https://github.com/psigcat/infoplus
 category=Plugins
-icon=icon.png
+icon=icon_infoplus.png
 # experimental flag
 experimental=True
 
