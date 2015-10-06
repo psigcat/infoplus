@@ -18,14 +18,14 @@
 
 .fieldvalue.pdf {
   font: 12px sans-serif;
+  cursor: pointer;
   fill: #DC143C; # crimson
-  cursor: 'pointer';
 }
 
 .fieldvalue.link {
   font: 12px sans-serif;
+  cursor: alias;
   fill: #0000FF; # blue
-  cursor: 'alias';
 }
 
 .fieldvalue {
