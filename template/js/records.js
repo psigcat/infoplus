@@ -194,7 +194,7 @@ function nodeGenerator(d) {
         }
         if (isUrl) {
             g.append('a')
-                .attr('xlink:href', d.value)
+                //.attr('xlink:href', d.value)
                 .classed('link', true)
                 .classed('fieldvalue ', true)
                 .append('text')
@@ -205,7 +205,7 @@ function nodeGenerator(d) {
         }
         if (isPdf) {
             g.append('a')
-                .attr('xlink:href', d.value)
+                //.attr('xlink:href', d.value)
                 .classed('pdf', true)
                 .classed('fieldvalue ', true)
                 .append('text')
