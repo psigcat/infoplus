@@ -39,14 +39,14 @@
      <item>
       <widget class="QPushButton" name="center_PButton">
        <property name="text">
-        <string>Center</string>
+        <string/>
        </property>
       </widget>
      </item>
      <item>
       <widget class="QPushButton" name="zoom_PButton">
        <property name="text">
-        <string>Zoom</string>
+        <string/>
        </property>
       </widget>
      </item>
