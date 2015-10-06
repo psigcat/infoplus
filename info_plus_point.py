@@ -1,9 +1,13 @@
 import json
 import time
+import os
+import subprocess
+import platform
 from collections import OrderedDict
 
 from qgis.gui import *
 from qgis.core import *
+from qgis.utils import iface
 from PyQt4.Qt import *
 
 from ui.info_plus_dialog import InfoPlusDialog
@@ -120,9 +124,50 @@ class InfoPlusPoint(QgsMapTool):
                 newPage = RecordsDisplayWidget(layer, self.iface.mainWindow())
                 newPage.setObjectName('page_' + layer.id())
                 
+                # record listener to open PDF or link is cliked
+                newPage.pdfClicked.connect(self.managePdfClicked)
+                newPage.linkClicked.connect(self.manageLinkClicked)
+                
                 # set tab name witht the record count
                 aux = layer.name()+" ("+str(layer.selectedFeatureCount())+")" 
                 self.dlg.tbMain.addItem(newPage, aux)
+    
+    def managePdfClicked(self, layerId, featureId, pdfDocument):
+        ''' Open a pdf document that has been clicked
+        '''
+        # manage filepath if absolute or relaltive
+        filepath = pdfDocument
+        print os.path.isabs(filepath)
+        if not os.path.isabs(filepath):
+            filepath = os.path.join( os.path.dirname(__file__), filepath)
+        
+        # check if exist
+        if not os.path.exists(filepath):
+            iface.messageBar().pushWarning('', self.tr('File {} does not exist'.format(filepath)))
+            return
+        
+        if not os.path.isfile(filepath):
+            iface.messageBar().pushWarning('', self.tr('{} is not a file'.format(filepath)))
+            return
+                
+        # then open
+        self._openUri(filepath)
+              
+    def manageLinkClicked(self, layerId, featureId, link):
+        ''' Open a link that has been clicked
+        '''
+        self._openUri(link)
+    
+    def _openUri(self, uri):
+        ''' Usefult to open Uri using default desktop application
+        '''
+        platformName = platform.system().lower()
+        if platformName.startswith('linux'):
+            subprocess.call(('xdg-open', uri))
+        elif platformName.startswith('win') or platformName.startswith('cygwin'):
+            os.startfile(uri)
+        elif platformName.startswith('darwin'):
+            subprocess.call(('open', uri))
     
     def setInterface(self, iface):
         self.iface = iface

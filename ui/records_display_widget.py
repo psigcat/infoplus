@@ -14,6 +14,8 @@ class RecordsDisplayWidget(QtGui.QWidget, FORM_CLASS):
     
     # signal emitted quen the webView is compleated loaded
     ready = QtCore.pyqtSignal(bool)
+    pdfClicked = QtCore.pyqtSignal(str, str, str)    
+    linkClicked = QtCore.pyqtSignal(str, str, str)    
     
     def __init__(self, layer, parent):
         """Constructor."""
@@ -27,6 +29,8 @@ class RecordsDisplayWidget(QtGui.QWidget, FORM_CLASS):
         self._ready = False
         self._recordsDisplayWidgetBridge = RecordsDisplayWidgetBridge()
         self._recordsDisplayWidgetBridge.selectedRecord.connect(self._setSelectedRecord)
+        self._recordsDisplayWidgetBridge.pdfClicked.connect(self._pdfClicked)
+        self._recordsDisplayWidgetBridge.linkClicked.connect(self._linkClicked)
         
         # att HTML template and JS code to the web view
         self.initWebView()
@@ -65,7 +69,7 @@ class RecordsDisplayWidget(QtGui.QWidget, FORM_CLASS):
         self.webView.page().mainFrame().addToJavaScriptWindowObject("recordsDisplayWidgetBridge", self._recordsDisplayWidgetBridge)
         
         # wait a wile before loading records.
-        QtCore.QTimer.singleShot(200, self._displayRecords)
+        QtCore.QTimer.singleShot(300, self._displayRecords)
         
     def _displayRecords(self):
         ''' after a wile show records... this give time that the bridge is available in JS
@@ -124,6 +128,16 @@ class RecordsDisplayWidget(QtGui.QWidget, FORM_CLASS):
 
         self._selectedLayerId = layerId
         self._selectedFeatureId = int(featureId)
+    
+    def _pdfClicked(self, layerId, featureId, pdfDocument):
+        ''' re emit signal that a pdf document has been clicked
+        '''
+        self.pdfClicked.emit(layerId, featureId, pdfDocument)
+    
+    def _linkClicked(self, layerId, featureId, link):
+        ''' re emit signal that a link document has been clicked
+        '''
+        self.linkClicked.emit(layerId, featureId, link)
     
     def getSelection(self):
         ''' return current selection touple (that can be none,none if no selection)
