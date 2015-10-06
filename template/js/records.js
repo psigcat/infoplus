@@ -315,16 +315,13 @@ function isPDF(text) {
 
 // fuction to recognise if string is am URL
 function IsURL(url) {
-    var strRegex = "^((https|http|ftp|rtsp|mms)?://)"
-        + "?(([0-9a-z_!~*'().&=+$%-]+: )?[0-9a-z_!~*'().&=+$%-]+@)?" //ftp user@
-        + "(([0-9]{1,3}\.){3}[0-9]{1,3}" // IP URL- 199.194.52.184
-        + "|" // DOMAIN
-        + "([0-9a-z_!~*'()-]+\.)*"
-        + "([0-9a-z][0-9a-z-]{0,61})?[0-9a-z]\."
-        + "[a-z]{2,6})" // first level domain- .com or .museum
-        + "(:[0-9]{1,4})?" // port - :80
-        + "((/?)|" // a slash isn't required if there is no file name
-        + "(/[0-9a-z_!~*'().;?:@&=+$,%#-]+)+/?)$";
-     var re=new RegExp(strRegex);
-     return re.test(url);
+     // because the regext recognize float as url due to '.' => check if it is a float before
+     if (url === +url) {
+         return false;
+     }
+     
+     // get from http://stackoverflow.com/questions/3809401/what-is-a-good-regular-expression-to-match-a-url
+     var urlRegex = '^(?!mailto:)(?:(?:http|https|ftp)://)(?:\\S+(?::\\S*)?@)?(?:(?:(?:[1-9]\\d?|1\\d\\d|2[01]\\d|22[0-3])(?:\\.(?:1?\\d{1,2}|2[0-4]\\d|25[0-5])){2}(?:\\.(?:[0-9]\\d?|1\\d\\d|2[0-4]\\d|25[0-4]))|(?:(?:[a-z\\u00a1-\\uffff0-9]+-?)*[a-z\\u00a1-\\uffff0-9]+)(?:\\.(?:[a-z\\u00a1-\\uffff0-9]+-?)*[a-z\\u00a1-\\uffff0-9]+)*(?:\\.(?:[a-z\\u00a1-\\uffff]{2,})))|localhost)(?::\\d{2,5})?(?:(/|\\?|#)[^\\s]*)?$';
+     var re = new RegExp(urlRegex, 'i');
+     return url.length < 2083 && re.test(url);
  }
