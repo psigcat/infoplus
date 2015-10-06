@@ -168,7 +168,8 @@ function nodeGenerator(d) {
             .attr('class', currentNodeType)
             .attr("dy", 3.5)
             .attr("dx", 5.5)
-            .on('click', selectRecord);
+            .on('click', selectRecord)
+            .on('mouseover', hilightRecord);
         return t.node();
     }
     
@@ -262,6 +263,16 @@ function selectRecord(d) {
     console.log(layerId, featureId)
        
     recordsDisplayWidgetBridge.setSelctedRecord(layerId, featureId);
+}
+
+// hilight the record when the mouse is over the featureId
+function hilightRecord(d) {
+    // set current featureId selection
+    featureId = d3.select(this).text();
+    
+    console.log(layerId, featureId)
+       
+    recordsDisplayWidgetBridge.setHilightRecord(layerId, featureId);
 }
 
 // return the updated class of the current node

@@ -7,8 +7,8 @@ from collections import OrderedDict
 
 from qgis.gui import *
 from qgis.core import *
-from qgis.utils import iface
-from PyQt4.Qt import *
+
+from PyQt4 import QtCore, QtGui
 
 from ui.info_plus_dialog import InfoPlusDialog
 from ui.records_display_widget import RecordsDisplayWidget
@@ -23,6 +23,7 @@ class InfoPlusPoint(QgsMapTool):
         QgsMapTool.__init__(self, self.canvas)
         self.setAction(action)
         self.defaultZoomScale = None
+        self.currentHighlight = None
         self.loadInfoPlusPointSettings()
     
     
@@ -56,7 +57,7 @@ class InfoPlusPoint(QgsMapTool):
         self.dlg.zoom_PButton.clicked.connect(self.doZoomCenterAction)
         
         # Iterate over all layers
-        self.layers = self.iface.mapCanvas().layers()
+        self.layers = self.canvas.layers()
         self.processLayers()
         
         # Show dialog
@@ -103,7 +104,7 @@ class InfoPlusPoint(QgsMapTool):
         if self.sender().objectName() == 'zoom_PButton':
             # scale of bbox depending on geom type           
             if geometry.type() == QGis.Point:
-                self.iface.mapCanvas().zoomScale(float(self.defaultZoomScale))                    
+                self.canvas.zoomScale(float(self.defaultZoomScale))                    
             else:
                 self.canvas.setExtent(geometry.boundingBox())
         
@@ -127,10 +128,65 @@ class InfoPlusPoint(QgsMapTool):
                 # record listener to open PDF or link is cliked
                 newPage.pdfClicked.connect(self.managePdfClicked)
                 newPage.linkClicked.connect(self.manageLinkClicked)
+                newPage.highlightRecord.connect(self.manageHighlight)
                 
                 # set tab name witht the record count
                 aux = layer.name()+" ("+str(layer.selectedFeatureCount())+")" 
                 self.dlg.tbMain.addItem(newPage, aux)
+    
+
+    def manageHighlight(self, layerId, featureId):
+        ''' Hilight record that is currently under the mouse
+        ''' 
+        # check if something is selected
+        if (not layerId) or (not featureId):
+            return
+        
+        # get current selected layer
+        layer = QgsMapLayerRegistry.instance().mapLayer(layerId)
+        if (not layer) or (not layer.isValid()):
+            return
+        
+        # get feature with the specific featureId
+        iterator = layer.getFeatures(QgsFeatureRequest(int(featureId)))
+        try:
+            feature = iterator.next()
+        except:
+            # no feature found
+            return
+        
+        # depending on geometry do different actions
+        geometry = feature.geometry()
+        
+        # skip if not valid
+        if (geometry.type() == QGis.UnknownGeometry) or (geometry.type() == QGis.NoGeometry):
+            return
+        
+        # create Hilight
+        self.currentHighlight = QgsHighlight(self.canvas, geometry, layer)
+        
+        # set standard style
+        color = QtGui.QColor( self.settings.value( "/Map/highlight/color", QGis.DEFAULT_HIGHLIGHT_COLOR.name() ) )
+        alpha = int( self.settings.value( "/Map/highlight/colorAlpha", QGis.DEFAULT_HIGHLIGHT_COLOR.alpha() ))
+        buffer = float(self.settings.value( "/Map/highlight/buffer", QGis.DEFAULT_HIGHLIGHT_BUFFER_MM ))
+        minWidth = float(self.settings.value( "/Map/highlight/minWidth", QGis.DEFAULT_HIGHLIGHT_MIN_WIDTH_MM ))
+        
+        self.currentHighlight.setColor( color ) # sets also fill with default alpha
+        color.setAlpha( alpha )
+        self.currentHighlight.setFillColor( color ) # sets fill with alpha
+        self.currentHighlight.setBuffer( buffer )
+        self.currentHighlight.setMinWidth( minWidth )
+        self.currentHighlight.show()
+        
+        # remove hilight after a while
+        QtCore.QTimer.singleShot(300, self._removeHighlight)
+    
+    
+    def _removeHighlight(self):
+        ''' remove current Highlight
+        '''
+        del self.currentHighlight
+    
     
     def managePdfClicked(self, layerId, featureId, pdfDocument):
         ''' Open a pdf document that has been clicked
@@ -143,20 +199,22 @@ class InfoPlusPoint(QgsMapTool):
         
         # check if exist
         if not os.path.exists(filepath):
-            iface.messageBar().pushWarning('', self.tr('File {} does not exist'.format(filepath)))
+            self.iface.messageBar().pushWarning('', self.tr('File {} does not exist'.format(filepath)))
             return
         
         if not os.path.isfile(filepath):
-            iface.messageBar().pushWarning('', self.tr('{} is not a file'.format(filepath)))
+            self.iface.messageBar().pushWarning('', self.tr('{} is not a file'.format(filepath)))
             return
                 
         # then open
         self._openUri(filepath)
               
+    
     def manageLinkClicked(self, layerId, featureId, link):
         ''' Open a link that has been clicked
         '''
         self._openUri(link)
+    
     
     def _openUri(self, uri):
         ''' Usefult to open Uri using default desktop application
@@ -169,8 +227,10 @@ class InfoPlusPoint(QgsMapTool):
         elif platformName.startswith('darwin'):
             subprocess.call(('open', uri))
     
+    
     def setInterface(self, iface):
         self.iface = iface
+    
     
     def clear(self):
         # Remove selection of all layers
@@ -179,11 +239,13 @@ class InfoPlusPoint(QgsMapTool):
             print layer.name()
             layer.removeSelection()
             
+    
     def deactivate(self):
         pass
         #if self is not None:
         #    QgsMapTool.deactivate(self)
         
+    
     def activate(self):
         QgsMapTool.activate(self)
     

@@ -28,9 +28,10 @@ from qgis.core import QgsLogger
 class RecordsDisplayWidgetBridge(QtCore.QObject):
     ''' Class used to receive statistic modification from JS and bridge to Python
     '''
-    selectedRecord = QtCore.pyqtSignal(str, str)    
-    linkClicked = QtCore.pyqtSignal(str, str, str)    
-    pdfClicked = QtCore.pyqtSignal(str, str, str)    
+    selectedRecord = QtCore.pyqtSignal(str, str)
+    highlightRecord = QtCore.pyqtSignal(str, str)
+    linkClicked = QtCore.pyqtSignal(str, str, str)
+    pdfClicked = QtCore.pyqtSignal(str, str, str)
 
     def __init__(self):
         """Constructor."""
@@ -45,6 +46,16 @@ class RecordsDisplayWidgetBridge(QtCore.QObject):
         
         if layerId and featureId:
             self.selectedRecord.emit(layerId, featureId)
+
+    @QtCore.pyqtSlot(str, str)
+    def setHilightRecord(self, layerId=None, featureId=None):
+        '''
+        slot emitted by JS to communicate the current Layer/featureId have to be highlighted
+        '''
+        QgsLogger.debug("RecordsDisplayWidgetBridge.setHilightRecord: on mouse over layerId = {} and record id {}".format(layerId, featureId), 3)
+        
+        if layerId and featureId:
+            self.highlightRecord.emit(layerId, featureId)
 
     @QtCore.pyqtSlot(str, str, str)
     def notifyLinkClicked(self, layerId=None, featureId=None, link=None):

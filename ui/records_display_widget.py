@@ -15,7 +15,8 @@ class RecordsDisplayWidget(QtGui.QWidget, FORM_CLASS):
     # signal emitted quen the webView is compleated loaded
     ready = QtCore.pyqtSignal(bool)
     pdfClicked = QtCore.pyqtSignal(str, str, str)    
-    linkClicked = QtCore.pyqtSignal(str, str, str)    
+    linkClicked = QtCore.pyqtSignal(str, str, str)
+    highlightRecord = QtCore.pyqtSignal(str, str)
     
     def __init__(self, layer, parent):
         """Constructor."""
@@ -31,7 +32,8 @@ class RecordsDisplayWidget(QtGui.QWidget, FORM_CLASS):
         self._recordsDisplayWidgetBridge.selectedRecord.connect(self._setSelectedRecord)
         self._recordsDisplayWidgetBridge.pdfClicked.connect(self._pdfClicked)
         self._recordsDisplayWidgetBridge.linkClicked.connect(self._linkClicked)
-        
+        self._recordsDisplayWidgetBridge.highlightRecord.connect(self._hilightRecord)
+       
         # att HTML template and JS code to the web view
         self.initWebView()
         
@@ -128,6 +130,14 @@ class RecordsDisplayWidget(QtGui.QWidget, FORM_CLASS):
 
         self._selectedLayerId = layerId
         self._selectedFeatureId = int(featureId)
+    
+    def _hilightRecord(self, layerId, featureId):
+        ''' Set current hilighted Record and layer
+        '''
+        QgsLogger.debug("RecordsDisplayWidget._hilightRecord: on mouse over layerId = {} and record id {}".format(layerId, featureId), 3)
+        
+        if layerId and featureId:
+            self.highlightRecord.emit(layerId, featureId)
     
     def _pdfClicked(self, layerId, featureId, pdfDocument):
         ''' re emit signal that a pdf document has been clicked
