@@ -3,7 +3,6 @@ import time
 import os
 import subprocess
 import platform
-from collections import OrderedDict
 
 from qgis.gui import *
 from qgis.core import *
