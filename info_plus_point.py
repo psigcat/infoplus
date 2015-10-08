@@ -194,7 +194,6 @@ class InfoPlusPoint(QgsMapTool):
         '''
         # manage filepath if absolute or relaltive
         filepath = document
-        print os.path.isabs(filepath)
         if not os.path.isabs(filepath):
             filepath = os.path.join( os.path.dirname(__file__), filepath)
         
@@ -237,7 +236,6 @@ class InfoPlusPoint(QgsMapTool):
         # Remove selection of all layers
         layers = self.iface.mapCanvas().layers()
         for layer in layers:
-            print layer.name()
             layer.removeSelection()
             
     
