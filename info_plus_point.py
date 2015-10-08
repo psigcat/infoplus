@@ -184,7 +184,9 @@ class InfoPlusPoint(QgsMapTool):
     def _removeHighlight(self):
         ''' remove current Highlight
         '''
-        del self.currentHighlight
+        if self.currentHighlight:
+            del self.currentHighlight
+            self.currentHighlight = None
     
     
     def managePdfClicked(self, layerId, featureId, pdfDocument):
