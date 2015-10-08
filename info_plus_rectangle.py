@@ -46,6 +46,10 @@ class InfoPlusRectangle(QgsMapTool):
     
     
     def canvasReleaseEvent(self, e):
+    
+        # Remove selection of all layers
+        self.clearCanvas()
+        
         self.isEmittingPoint = False
         r = self.rectangle()
         layers = self.canvas.layers()
@@ -57,9 +61,6 @@ class InfoPlusRectangle(QgsMapTool):
                 layer.select(lRect, False)
                 
         self.rubberBand.hide()
-
-        # Remove selection of all layers
-        #self.clear()
         
         # Create new dialog
         self.dlg = InfoPlusDialog()
@@ -284,11 +285,13 @@ class InfoPlusRectangle(QgsMapTool):
         self.iface = iface
     
     
-    def clear(self):
+    def clearCanvas(self):
         # Remove selection of all layers
         layers = self.iface.mapCanvas().layers()
         for layer in layers:
-            layer.removeSelection()
+            if layer.type() == layer.VectorLayer:
+                layer.removeSelection()
+        self.iface.mapCanvas().refresh()   
             
     
     def deactivate(self):

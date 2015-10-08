@@ -35,6 +35,9 @@ class InfoPlusPoint(QgsMapTool):
         
     def canvasPressEvent(self, e):
     
+        # Remove selection of all layers
+        self.clearCanvas()
+        
         p = self.toMapCoordinates(e.pos())      
         layers = self.canvas.layers()
         w = self.canvas.mapUnitsPerPixel() * 3
@@ -44,9 +47,6 @@ class InfoPlusPoint(QgsMapTool):
                 continue
             lRect = self.canvas.mapSettings().mapToLayerCoordinates(layer, rect)
             layer.select(lRect, False)
-        
-        # Remove selection of all layers
-        #self.clear()
         
         # Create new dialog
         self.dlg = InfoPlusDialog()
@@ -232,12 +232,14 @@ class InfoPlusPoint(QgsMapTool):
         self.iface = iface
     
     
-    def clear(self):
+    def clearCanvas(self):
         # Remove selection of all layers
         layers = self.iface.mapCanvas().layers()
         for layer in layers:
-            layer.removeSelection()
-            
+            if layer.type() == layer.VectorLayer:
+                layer.removeSelection()
+        self.iface.mapCanvas().refresh()   
+    
     
     def deactivate(self):
         pass
