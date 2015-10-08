@@ -133,9 +133,9 @@ class InfoPlus(QObject):
         self.actionRectangle = self.createAction(icon_path2, u"Multiple Selection by Rectangle", self.runRectangle)   
 
         self.toolPoint = InfoPlusPoint(self.iface.mapCanvas(), self.actionPoint, self.settings) 
-        self.toolRectangle = InfoPlusRectangle(self.iface.mapCanvas(), self.actionRectangle) 
+        self.toolRectangle = InfoPlusRectangle(self.iface.mapCanvas(), self.actionRectangle, self.settings) 
         self.toolPoint.setInterface(self.iface)
-        #self.toolRectangle.setInterface(self.iface)        
+        self.toolRectangle.setInterface(self.iface)        
         
         # QToolButtons
         self.selectionButton = self.createToolButton(self.toolbar, u'MultipleSelectionButton')
