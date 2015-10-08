@@ -177,7 +177,7 @@ class InfoPlusRectangle(QgsMapTool):
                 newPage.setObjectName('page_' + layer.id())
                 
                 # record listener to open PDF or link is cliked
-                newPage.pdfClicked.connect(self.managePdfClicked)
+                newPage.docClicked.connect(self.manageDocClicked)
                 newPage.linkClicked.connect(self.manageLinkClicked)
                 newPage.highlightRecord.connect(self.manageHighlight)
                 
@@ -241,11 +241,11 @@ class InfoPlusRectangle(QgsMapTool):
             self.currentHighlight = None
     
     
-    def managePdfClicked(self, layerId, featureId, pdfDocument):
-        ''' Open a pdf document that has been clicked
+    def manageDocClicked(self, layerId, featureId, document):
+        ''' Open a doc document that has been clicked
         '''
         # manage filepath if absolute or relaltive
-        filepath = pdfDocument
+        filepath = document
         print os.path.isabs(filepath)
         if not os.path.isabs(filepath):
             filepath = os.path.join( os.path.dirname(__file__), filepath)

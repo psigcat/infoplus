@@ -184,9 +184,9 @@ function nodeGenerator(d) {
         
         // check what to add depending if it's pdf or link
         var isUrl = IsURL( d.value );
-        var isPdf = isPDF( d.value );
+        var isDocument = isDOC( d.value );
         
-        if ( !isUrl && !isPdf) {
+        if ( !isUrl && !isDocument) {
             g.append('text')
                 .classed('fieldvalue ', true)
                 .text(d.value)
@@ -204,14 +204,14 @@ function nodeGenerator(d) {
                     .attr("dy", 3.5)
                     .attr("dx", 120.5);
         }
-        if (isPdf) {
+        if (isDocument) {
             g.append('a')
                 //.attr('xlink:href', d.value)
-                .classed('pdf', true)
+                .classed('doc', true)
                 .classed('fieldvalue ', true)
                 .append('text')
                     .text(d.value)
-                    .on('click', notifyPdfClicked)
+                    .on('click', notifyDocClicked)
                     .attr("dy", 3.5)
                     .attr("dx", 120.5);
         }
@@ -231,14 +231,14 @@ function notifyLinkClicked(d) {
 }
 
 // notify that a pdf document has been clicked
-function notifyPdfClicked(d) {
+function notifyDocClicked(d) {
     // knowing data organization, browsing data, I can recover record Id
     var featureId = d.parent.parent.children[0].name;
     var pdfDocument = d.value;
     
     console.log(layerId, featureId, pdfDocument);
        
-    recordsDisplayWidgetBridge.notifyPdfClicked(layerId, featureId, pdfDocument);
+    recordsDisplayWidgetBridge.notifyDocClicked(layerId, featureId, pdfDocument);
 }
 
 // select current clicked record deselecting the others
@@ -318,8 +318,9 @@ function color(d) {
 }
 
 // recognise if string is a pdf filename
-function isPDF(text) {
-    var strRegex = "^.*\.(pdf|PDF)$";
+function isDOC(text) {
+    // you can create a smarted regexp... leaved simple to allow simple modification
+    var strRegex = "^.*\.(pdf|PDF|jpg|JPG|png|PNG)$";
      var re=new RegExp(strRegex);
      return re.test(text);
 }

@@ -14,7 +14,7 @@ class RecordsDisplayWidget(QtGui.QWidget, FORM_CLASS):
     
     # signal emitted quen the webView is compleated loaded
     ready = QtCore.pyqtSignal(bool)
-    pdfClicked = QtCore.pyqtSignal(str, str, str)    
+    docClicked = QtCore.pyqtSignal(str, str, str)    
     linkClicked = QtCore.pyqtSignal(str, str, str)
     highlightRecord = QtCore.pyqtSignal(str, str)
     
@@ -30,7 +30,7 @@ class RecordsDisplayWidget(QtGui.QWidget, FORM_CLASS):
         self._ready = False
         self._recordsDisplayWidgetBridge = RecordsDisplayWidgetBridge()
         self._recordsDisplayWidgetBridge.selectedRecord.connect(self._setSelectedRecord)
-        self._recordsDisplayWidgetBridge.pdfClicked.connect(self._pdfClicked)
+        self._recordsDisplayWidgetBridge.docClicked.connect(self._docClicked)
         self._recordsDisplayWidgetBridge.linkClicked.connect(self._linkClicked)
         self._recordsDisplayWidgetBridge.highlightRecord.connect(self._hilightRecord)
        
@@ -139,10 +139,10 @@ class RecordsDisplayWidget(QtGui.QWidget, FORM_CLASS):
         if layerId and featureId:
             self.highlightRecord.emit(layerId, featureId)
     
-    def _pdfClicked(self, layerId, featureId, pdfDocument):
-        ''' re emit signal that a pdf document has been clicked
+    def _docClicked(self, layerId, featureId, document):
+        ''' re emit signal that a document has been clicked
         '''
-        self.pdfClicked.emit(layerId, featureId, pdfDocument)
+        self.docClicked.emit(layerId, featureId, document)
     
     def _linkClicked(self, layerId, featureId, link):
         ''' re emit signal that a link document has been clicked

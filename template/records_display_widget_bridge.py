@@ -31,7 +31,7 @@ class RecordsDisplayWidgetBridge(QtCore.QObject):
     selectedRecord = QtCore.pyqtSignal(str, str)
     highlightRecord = QtCore.pyqtSignal(str, str)
     linkClicked = QtCore.pyqtSignal(str, str, str)
-    pdfClicked = QtCore.pyqtSignal(str, str, str)
+    docClicked = QtCore.pyqtSignal(str, str, str)
 
     def __init__(self):
         """Constructor."""
@@ -69,14 +69,14 @@ class RecordsDisplayWidgetBridge(QtCore.QObject):
             self.linkClicked.emit(layerId, featureId, link)
 
     @QtCore.pyqtSlot(str, str, str)
-    def notifyPdfClicked(self, layerId=None, featureId=None, pdfDocument=None):
+    def notifyDocClicked(self, layerId=None, featureId=None, document=None):
         '''
-        slot emitted by JS to communicate that a pdf document has been clicked.
+        slot emitted by JS to communicate that a document has been clicked.
         event return the Layer/featureId of the click and the value of the document filename
         Does not care if document filename is relative or absolute... that's is managed by 
         listeners of this event
         '''
-        QgsLogger.debug("RecordsDisplayWidgetBridge.notifyPdfClicked: Clicked pdf = {} on layerId = {} and record id {}".format(pdfDocument, layerId, featureId), 3)
+        QgsLogger.debug("RecordsDisplayWidgetBridge.notifyDocClicked: Clicked doc = {} on layerId = {} and record id {}".format(document, layerId, featureId), 3)
         
-        if layerId and featureId and pdfDocument:
-            self.pdfClicked.emit(layerId, featureId, pdfDocument)
+        if layerId and featureId and document:
+            self.docClicked.emit(layerId, featureId, document)
