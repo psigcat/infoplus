@@ -83,7 +83,7 @@ class RecordsDisplayWidget(QtGui.QWidget, FORM_CLASS):
             # prepare js command to execute in the page
             jsonString = json.dumps(featuresDict)
             
-            JsCommand = "showRecords('%s', '%s')" % (self._layer.id(), jsonString)
+            JsCommand = "showRecords('%s', %s)" % (self._layer.id(), jsonString) # <<< jsonString is automatically converted in javascript obj during evaluate
             QgsLogger.debug(self.tr("display records with with JS command: %s" % JsCommand), 3)
             
             # show records

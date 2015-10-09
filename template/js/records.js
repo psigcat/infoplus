@@ -28,7 +28,7 @@ var svg = d3.select("body").append("svg")
 
 function showRecords(layerIdFromPython, jsonFromPython) {
     layerId = layerIdFromPython;
-    json = JSON.parse(jsonFromPython);
+    json = jsonFromPython;
     
     console.log(layerId);
     console.log(json);
