@@ -29,8 +29,8 @@ class InfoPlusPoint(QgsMapTool):
     def loadInfoPlusPointSettings(self):
         ''' Load plugin settings
         '''      
-        # get initial Scale
-        self.defaultZoomScale = self.settings.value('status/defaultZoomScale', 2500)
+        self.defaultZoomScale = self.settings.value('status/defaultZoomScale', 2500)        
+        self.highlightTime = int(self.settings.value('status/highlightTime', 1000))
 
         
     def canvasPressEvent(self, e):
@@ -177,8 +177,8 @@ class InfoPlusPoint(QgsMapTool):
         self.currentHighlight.setMinWidth( minWidth )
         self.currentHighlight.show()
         
-        # remove hilight after a while
-        QtCore.QTimer.singleShot(300, self._removeHighlight)
+        # remove highlight after a while
+        QtCore.QTimer.singleShot(self.highlightTime, self._removeHighlight)
     
     
     def _removeHighlight(self):

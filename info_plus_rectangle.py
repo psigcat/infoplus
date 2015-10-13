@@ -23,10 +23,9 @@ class InfoPlusRectangle(QgsMapTool):
         self.defaultZoomScale = None
         self.currentHighlight = None
         self.loadInfoPlusPointSettings()
-    
 
         self.rubberBand = QgsRubberBand(self.canvas, QGis.Polygon)
-        mFillColor = QColor( 254, 178, 76, 63 );
+        mFillColor = QColor(254, 178, 76, 63);
         self.rubberBand.setColor(mFillColor)
         self.rubberBand.setWidth(1)
         self.reset()
@@ -112,8 +111,8 @@ class InfoPlusRectangle(QgsMapTool):
     def loadInfoPlusPointSettings(self):
         ''' Load plugin settings
         '''      
-        # get initial Scale
-        self.defaultZoomScale = self.settings.value('status/defaultZoomScale', 2500)
+        self.defaultZoomScale = self.settings.value('status/defaultZoomScale', 2500)        
+        self.highlightTime = int(self.settings.value('status/highlightTime', 1000))
 
         
     def doZoomCenterAction(self):
@@ -230,8 +229,8 @@ class InfoPlusRectangle(QgsMapTool):
         self.currentHighlight.setMinWidth( minWidth )
         self.currentHighlight.show()
         
-        # remove hilight after a while
-        QtCore.QTimer.singleShot(300, self._removeHighlight)
+        # remove highlight after a while
+        QtCore.QTimer.singleShot(self.highlightTime, self._removeHighlight)
     
     
     def _removeHighlight(self):

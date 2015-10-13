@@ -23,16 +23,12 @@ var diagonal = d3.svg.diagonal()
 
 var svg = d3.select("body").append("svg")
     .attr("width", width + margin.left + margin.right)
-  .append("g")
+    .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
 function showRecords(layerIdFromPython, jsonFromPython) {
     layerId = layerIdFromPython;
     json = jsonFromPython;
-    
-    console.log(layerId);
-    console.log(json);
-    
     if (json.length == 0) {
         return;
     }
@@ -47,108 +43,103 @@ function showRecords(layerIdFromPython, jsonFromPython) {
 
 function update(source) {
 
-  // Compute the flattened node list. TODO use d3.layout.hierarchy.
-  var nodes = tree.nodes(root);
+    // Compute the flattened node list. TODO use d3.layout.hierarchy.
+    var nodes = tree.nodes(root);
+    var height = Math.max(500, nodes.length * barHeight + margin.top + margin.bottom);
+
+    d3.select("svg").transition()
+        .duration(duration)
+        .attr("height", height);
+
+    d3.select(self.frameElement).transition()
+        .duration(duration)
+        .style("height", height + "px");
+
+    // Compute the "layout".
+    nodes.forEach(function(n, i) {
+        n.x = i * barHeight;
+    });
+
+    // Update the nodes…
+    var gNode = svg.selectAll("g.node")
+        .data(nodes, function(d) { return d.id || (d.id = ++i); });
+
+    var nodeGroup = gNode.enter().append("g")
+        .attr("class", "node")
+        .attr("transform", function(d) { return "translate(" + source.y0 + "," + source.x0 + ")"; })
+        .style("opacity", 1e-6);
+
+    // Enter any new nodes at the parent's previous position.
+    nodeGroup.append("svg:rect")
+        .attr("y", -barHeight / 2)
+        .attr("height", barHeight)
+        .attr("width", barWidth)
+        .style("fill", color)
+        .on("click", manageExpansion);
   
-  console.log('nodes')
-  console.log(nodes)
-  
-  var height = Math.max(500, nodes.length * barHeight + margin.top + margin.bottom);
-
-  d3.select("svg").transition()
-      .duration(duration)
-      .attr("height", height);
-
-  d3.select(self.frameElement).transition()
-      .duration(duration)
-      .style("height", height + "px");
-
-  // Compute the "layout".
-  nodes.forEach(function(n, i) {
-    n.x = i * barHeight;
-  });
-
-  // Update the nodes…
-  var gNode = svg.selectAll("g.node")
-      .data(nodes, function(d) { return d.id || (d.id = ++i); });
-
-  var nodeGroup = gNode.enter().append("g")
-      .attr("class", "node")
-      .attr("transform", function(d) { return "translate(" + source.y0 + "," + source.x0 + ")"; })
-      .style("opacity", 1e-6);
-
-  // Enter any new nodes at the parent's previous position.
-  nodeGroup.append("svg:rect")
-      .attr("y", -barHeight / 2)
-      .attr("height", barHeight)
-      .attr("width", barWidth)
-      .style("fill", color)
-      .on("click", manageExpansion);
-  
-  // show node name and value if it exists
-  nodeGroup.append(nodeGenerator);
+    // show node name and value if it exists
+    nodeGroup.append(nodeGenerator);
       
-  // Transition nodes to their new position.
-  nodeGroup.transition()
-      .duration(duration)
-      .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
-      .style("opacity", 1);
+    // Transition nodes to their new position.
+    nodeGroup.transition()
+        .duration(duration)
+        .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
+        .style("opacity", 1);
 
-  gNode.transition()
-      .duration(duration)
-      .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
-      .style("opacity", 1)
-    .select("rect")
-      .style("fill", color);
+    gNode.transition()
+        .duration(duration)
+        .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
+        .style("opacity", 1)
+        .select("rect")
+        .style("fill", color);
 
-  // Transition exiting nodes to the parent's new position.
-  gNode.exit().transition()
-      .duration(duration)
-      .attr("transform", function(d) { return "translate(" + source.y + "," + source.x + ")"; })
-      .style("opacity", 1e-6)
-      .remove();
+    // Transition exiting nodes to the parent's new position.
+    gNode.exit().transition()
+        .duration(duration)
+        .attr("transform", function(d) { return "translate(" + source.y + "," + source.x + ")"; })
+        .style("opacity", 1e-6)
+        .remove();
 
-  // Update the links…
-  var link = svg.selectAll("path.link")
+    // Update the links…
+    var link = svg.selectAll("path.link")
       .data(tree.links(nodes), function(d) { return d.target.id; });
 
-  // Enter any new links at the parent's previous position.
-  link.enter().insert("path", "g")
-      .attr("class", "link")
-      .attr("d", function(d) {
-        var o = {x: source.x0, y: source.y0};
-        return diagonal({source: o, target: o});
-      })
-    .transition()
-      .duration(duration)
-      .attr("d", diagonal);
+    // Enter any new links at the parent's previous position.
+    link.enter().insert("path", "g")
+        .attr("class", "link")
+        .attr("d", function(d) {
+            var o = {x: source.x0, y: source.y0};
+            return diagonal({source: o, target: o});
+        })
+        .transition()
+        .duration(duration)
+        .attr("d", diagonal);
 
-  // Transition links to their new position.
-  link.transition()
-      .duration(duration)
-      .attr("d", diagonal);
+    // Transition links to their new position.
+    link.transition()
+        .duration(duration)
+        .attr("d", diagonal);
 
-  // Transition exiting nodes to the parent's new position.
-  link.exit().transition()
-      .duration(duration)
-      .attr("d", function(d) {
-        var o = {x: source.x, y: source.y};
-        return diagonal({source: o, target: o});
-      })
-      .remove();
+    // Transition exiting nodes to the parent's new position.
+    link.exit().transition()
+        .duration(duration)
+        .attr("d", function(d) {
+            var o = {x: source.x, y: source.y};
+            return diagonal({source: o, target: o});
+        })
+      . remove();
 
-  // Stash the old positions for transition.
-  nodes.forEach(function(d) {
-    d.x0 = d.x;
-    d.y0 = d.y;
-  });
+    // Stash the old positions for transition.
+    nodes.forEach(function(d) {
+        d.x0 = d.x;
+        d.y0 = d.y;
+    });
 };
 
 // add a id hiperlink node or a fieldName leaf node
 function nodeGenerator(d) {
     
     var element = d3.select(this);
-    
     var currentNodeType =  kindOfNode(d);
     
     // if root node
@@ -186,7 +177,7 @@ function nodeGenerator(d) {
         var isUrl = IsURL( d.value );
         var isDocument = isDOC( d.value );
         
-        if ( !isUrl && !isDocument) {
+        if (!isUrl && !isDocument) {
             g.append('text')
                 .classed('fieldvalue ', true)
                 .text(d.value)
@@ -224,9 +215,6 @@ function notifyLinkClicked(d) {
     // knowing data organization, browsing data, I can recover record Id
     var featureId = d.parent.parent.children[0].name;
     var link = d.value;
-    
-    console.log(layerId, featureId, link);
-       
     recordsDisplayWidgetBridge.notifyLinkClicked(layerId, featureId, link);
 }
 
@@ -235,9 +223,6 @@ function notifyDocClicked(d) {
     // knowing data organization, browsing data, I can recover record Id
     var featureId = d.parent.parent.children[0].name;
     var pdfDocument = d.value;
-    
-    console.log(layerId, featureId, pdfDocument);
-       
     recordsDisplayWidgetBridge.notifyDocClicked(layerId, featureId, pdfDocument);
 }
 
@@ -251,17 +236,8 @@ function selectRecord(d) {
     d3.select(this)
         .classed('selected', true);
         
-    // then set selected also the rect below the record
-    //d3.selectAll('rect')
-    //    .classed('selected', false);
-    //d3.select(this.parentNode).select('rect')
-    //    .classed('selected', true);
-    
     // set current featureId selection
     featureId = d3.select(this).text();
-    
-    console.log(layerId, featureId)
-       
     recordsDisplayWidgetBridge.setSelctedRecord(layerId, featureId);
 }
 
@@ -269,9 +245,6 @@ function selectRecord(d) {
 function hilightRecord(d) {
     // set current featureId selection
     featureId = d3.select(this).text();
-    
-    console.log(layerId, featureId)
-       
     recordsDisplayWidgetBridge.setHilightRecord(layerId, featureId);
 }
 
@@ -279,7 +252,6 @@ function hilightRecord(d) {
 function kindOfClass(d) {
     // get current class
     var currentClass = d3.select(this).attr('class');
-    
     var newClass = kindOfNode(d);
     if (currentClass) {
         newClass = currentClass + ' ' + newClass;
@@ -303,37 +275,37 @@ function kindOfNode(d) {
 
 // Toggle children on click.
 function manageExpansion(d) {
-  if (d.children) {
-    d._children = d.children;
-    d.children = null;
-  } else {
-    d.children = d._children;
-    d._children = null;
-  }
-  update(d);
+    if (d.children) {
+        d._children = d.children;
+        d.children = null;
+    } else {
+        d.children = d._children;
+        d._children = null;
+    }
+    update(d);
 }
 
 function color(d) {
-  return d._children ? "#3182bd" : d.children ? "#c6dbef" : "#fd8d3c";
+    return d._children ? "#3182bd" : d.children ? "#c6dbef" : "#fd8d3c";
 }
 
 // recognise if string is a pdf filename
 function isDOC(text) {
     // you can create a smarted regexp... leaved simple to allow simple modification
     var strRegex = "^.*\.(pdf|PDF|jpg|JPG|png|PNG)$";
-     var re=new RegExp(strRegex);
-     return re.test(text);
+    var re=new RegExp(strRegex);
+    return re.test(text);
 }
 
 // fuction to recognise if string is am URL
 function IsURL(url) {
-     // because the regext recognize float as url due to '.' => check if it is a float before
-     if (url === +url) {
-         return false;
-     }
+    // because the regext recognize float as url due to '.' => check if it is a float before
+    if (url === +url) {
+        return false;
+    }
      
-     // get from http://stackoverflow.com/questions/3809401/what-is-a-good-regular-expression-to-match-a-url
-     var urlRegex = '^(?!mailto:)(?:(?:http|https|ftp)://)(?:\\S+(?::\\S*)?@)?(?:(?:(?:[1-9]\\d?|1\\d\\d|2[01]\\d|22[0-3])(?:\\.(?:1?\\d{1,2}|2[0-4]\\d|25[0-5])){2}(?:\\.(?:[0-9]\\d?|1\\d\\d|2[0-4]\\d|25[0-4]))|(?:(?:[a-z\\u00a1-\\uffff0-9]+-?)*[a-z\\u00a1-\\uffff0-9]+)(?:\\.(?:[a-z\\u00a1-\\uffff0-9]+-?)*[a-z\\u00a1-\\uffff0-9]+)*(?:\\.(?:[a-z\\u00a1-\\uffff]{2,})))|localhost)(?::\\d{2,5})?(?:(/|\\?|#)[^\\s]*)?$';
-     var re = new RegExp(urlRegex, 'i');
-     return url.length < 2083 && re.test(url);
+    // get from http://stackoverflow.com/questions/3809401/what-is-a-good-regular-expression-to-match-a-url
+    var urlRegex = '^(?!mailto:)(?:(?:http|https|ftp)://)(?:\\S+(?::\\S*)?@)?(?:(?:(?:[1-9]\\d?|1\\d\\d|2[01]\\d|22[0-3])(?:\\.(?:1?\\d{1,2}|2[0-4]\\d|25[0-5])){2}(?:\\.(?:[0-9]\\d?|1\\d\\d|2[0-4]\\d|25[0-4]))|(?:(?:[a-z\\u00a1-\\uffff0-9]+-?)*[a-z\\u00a1-\\uffff0-9]+)(?:\\.(?:[a-z\\u00a1-\\uffff0-9]+-?)*[a-z\\u00a1-\\uffff0-9]+)*(?:\\.(?:[a-z\\u00a1-\\uffff]{2,})))|localhost)(?::\\d{2,5})?(?:(/|\\?|#)[^\\s]*)?$';
+    var re = new RegExp(urlRegex, 'i');
+    return url.length < 2083 && re.test(url);
  }
