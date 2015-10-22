@@ -20,5 +20,6 @@ class InfoPlusDialog(QtGui.QDialog, FORM_CLASS):
         self.setupUi(self)
         
         # set default icons to the button get from panToSelected and Zoom actions
-        self.center_PButton.setIcon( iface.actionPanToSelected().icon() )
-        self.zoom_PButton.setIcon( iface.actionZoomToSelected().icon() )
+        self.center_PButton.setIcon(iface.actionPanToSelected().icon())
+        self.zoom_PButton.setIcon(iface.actionZoomToSelected().icon())
+        self.form_PButton.setIcon(iface.actionFeatureAction().icon())

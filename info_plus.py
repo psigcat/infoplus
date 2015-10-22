@@ -18,14 +18,9 @@
  *                                                                         *
  ***************************************************************************/
 """
-# 2To3 python compatibility
-#from __future__ import unicode_literals, division, print_function
-
 from qgis.utils import active_plugins
 from qgis.gui import (QgsMessageBar)
 from qgis.core import (QgsGeometry, QgsPoint, QgsLogger)
-#from PyQt4.QtCore import (QObject, QSettings, QTranslator, qVersion, QCoreApplication, Qt, pyqtSignal)
-#from PyQt4.QtGui import (QAction, QIcon, QDockWidget, QTextDocument, QIntValidator)
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from PyQt4 import QtWebKit
@@ -36,8 +31,6 @@ from info_plus_rectangle import InfoPlusRectangle
 
 import os.path
 import sys  
-#reload(sys)  
-#sys.setdefaultencoding('utf8')
 
 
 class InfoPlus(QObject):
@@ -93,11 +86,8 @@ class InfoPlus(QObject):
         QtWebKit.QWebSettings.globalSettings().setAttribute(QtWebKit.QWebSettings.PrintElementBackgrounds, True)
         QtWebKit.QWebSettings.globalSettings().setAttribute(QtWebKit.QWebSettings.OfflineStorageDatabaseEnabled, False)
         QtWebKit.QWebSettings.globalSettings().setAttribute(QtWebKit.QWebSettings.LocalStorageEnabled, False)
-        
-        # avoid caching webpages of the PopUp webview
-#         QtWebKit.QWebSettings.setMaximumPagesInCache( 0 );
-#         QtWebKit.QWebSettings.setObjectCacheCapacities( 0, 0, 0 );
 
+        
     def createToolButton(self, parent, text):
         button = QToolButton(parent)
         button.setObjectName(text)

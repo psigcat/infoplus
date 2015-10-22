@@ -53,7 +53,8 @@ class InfoPlusPoint(QgsMapTool):
         
         # add listener to selected layer/record
         self.dlg.center_PButton.clicked.connect(self.doZoomCenterAction)
-        self.dlg.zoom_PButton.clicked.connect(self.doZoomCenterAction)
+        self.dlg.zoom_PButton.clicked.connect(self.doZoomCenterAction)        
+        self.dlg.form_PButton.clicked.connect(self.doShowFeatureForm)
         
         # Iterate over all layers
         self.layers = self.canvas.layers()
@@ -62,32 +63,40 @@ class InfoPlusPoint(QgsMapTool):
         # Show dialog
         self.dlg.show()
     
+    
+    def checkAction(self):
+    
+        # check if something is selected
+        if (not self.selectedLayerId) or (not self.selectedFeatureId):
+            self.iface.messageBar().pushMessage("", 'Any feature selected', QgsMessageBar.WARNING, 3)           
+            return False
+        
+        # get current selected layer
+        layer = QgsMapLayerRegistry.instance().mapLayer(self.selectedLayerId)
+        if (not layer) or (not layer.isValid()):
+            self.iface.messageBar().pushMessage("", 'Any layer selected', QgsMessageBar.WARNING, 3)               
+            return False
+        
+        # get feature with the specific featureId
+        iterator = layer.getFeatures(QgsFeatureRequest(self.selectedFeatureId))
+        try:
+            feature = iterator.next()
+        except:
+            # no feature found
+            return False   
+    
+        return True, layer, feature
+        
 
     def doZoomCenterAction(self):
         ''' pan or zoom to the selected feature. Depend on sender
         '''
         # get current selection from current QToolBox
         currentPage = self.dlg.tbMain.currentWidget()
-        (selectedLayerId, selectedFeatureId) = currentPage.getSelection()
+        (self.selectedLayerId, self.selectedFeatureId) = currentPage.getSelection()
         
-        QgsLogger.debug("InfoPlusPoint.doZoomCenterAction: Selected layerId = {} and record id {}".format(selectedLayerId, selectedFeatureId), 3)
-        
-        # check if something is selected
-        if (not selectedLayerId) or (not selectedFeatureId):
-            return
-        
-        # get current selected layer
-        layer = QgsMapLayerRegistry.instance().mapLayer(selectedLayerId)
-        if (not layer) or (not layer.isValid()):
-            return
-        
-        # get feature with the specific featureId
-        iterator = layer.getFeatures(QgsFeatureRequest(selectedFeatureId))
-        try:
-            feature = iterator.next()
-        except:
-            # no feature found
-            return
+        # Chack if we can proceed with the action
+        (status, layer, feature) = self.checkAction()
         
         # depending on geometry do different actions
         geometry = feature.geometry()
@@ -109,6 +118,20 @@ class InfoPlusPoint(QgsMapTool):
         
         self.canvas.refresh()
 
+        
+    def doShowFeatureForm(self):
+        ''' show Feature Form
+        ''' 
+        # get current selection from current QToolBox
+        currentPage = self.dlg.tbMain.currentWidget()
+        (self.selectedLayerId, self.selectedFeatureId) = currentPage.getSelection()
+        
+        # Chack if we can proceed with the action        
+        (status, layer, feature) = self.checkAction()
+        
+        if status:
+            self.iface.openFeatureForm(layer, feature, False)
+        
     
     def processLayers(self):
         
@@ -178,10 +201,10 @@ class InfoPlusPoint(QgsMapTool):
         self.currentHighlight.show()
         
         # remove highlight after a while
-        QtCore.QTimer.singleShot(self.highlightTime, self._removeHighlight)
+        QtCore.QTimer.singleShot(self.highlightTime, self.removeHighlight)
     
     
-    def _removeHighlight(self):
+    def removeHighlight(self):
         ''' remove current Highlight
         '''
         if self.currentHighlight:
@@ -239,14 +262,4 @@ class InfoPlusPoint(QgsMapTool):
             if layer.type() == layer.VectorLayer:
                 layer.removeSelection()
         self.iface.mapCanvas().refresh()   
-    
-    
-    def deactivate(self):
-        pass
-        #if self is not None:
-        #    QgsMapTool.deactivate(self)
-        
-    
-    def activate(self):
-        QgsMapTool.activate(self)
     
