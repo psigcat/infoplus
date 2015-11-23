@@ -53,6 +53,14 @@ class RecordsDisplayWidget(QtGui.QWidget, FORM_CLASS):
         self.webView.load(QtCore.QUrl.fromLocalFile(webPage))
     
     
+    def setName(self, name):
+        self.name = name
+        
+        
+    def setRemoveSelection(self, removeSelection):
+        self.removeSelection = removeSelection        
+        
+        
     def isReady(self):
         ''' Status of the loaded webView
         '''
@@ -74,12 +82,12 @@ class RecordsDisplayWidget(QtGui.QWidget, FORM_CLASS):
         # first inject bridge object
         self.webView.page().mainFrame().addToJavaScriptWindowObject("recordsDisplayWidgetBridge", self._recordsDisplayWidgetBridge)
         
-        # wait a wile before loading records.
+        # wait a while before loading records
         QtCore.QTimer.singleShot(300, self._displayRecords)
         
         
     def _displayRecords(self):
-        ''' after a wile show records... this give time that the bridge is available in JS
+        ''' after a while show records... this give time that the bridge is available in JS
         '''
         if self._layer.selectedFeatureCount():
             # then prepare selected records in structure usefut for accordion visualization
@@ -100,6 +108,10 @@ class RecordsDisplayWidget(QtGui.QWidget, FORM_CLASS):
         # then we can say that the load is completed
         self._ready = True
         
+        # Check if we want to remove selection of this layer
+        if self.removeSelection:
+            self._layer.removeSelection()      
+        
         # notify it is ready
         self.ready.emit(self._ready)
     
@@ -109,7 +121,7 @@ class RecordsDisplayWidget(QtGui.QWidget, FORM_CLASS):
         '''
         # Get selected features of current layers
         columns = [field.name() for field in self._layer.pendingFields().toList()]
-        featuresDict = {'name': 'Registres', 'children': []}
+        featuresDict = {'name': self.name, 'children': []}
         for i, feature in enumerate(self._layer.selectedFeatures()):
             item = {'name': feature.id(), 'children': []} 
             

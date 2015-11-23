@@ -117,6 +117,7 @@ class InfoPlusRectangle(QgsMapTool):
         self.zoomButtonVisible = bool(int(self.settings.value('status/zoomButtonVisible', 0)))  
         self.formButtonVisible = bool(int(self.settings.value('status/formButtonVisible', 1)))
         self.recordsTitle = self.settings.value('status/recordsTitle', 'Records:')
+        self.removeSelection = bool(int(self.settings.value('status/removeSelection', 1)))        
 
         
     def doZoomCenterAction(self):
@@ -179,7 +180,8 @@ class InfoPlusRectangle(QgsMapTool):
             if layer.selectedFeatureCount() > 0:
                 newPage = RecordsDisplayWidget(layer, self.iface.mainWindow())
                 newPage.setObjectName('page_' + layer.id())
-                newPage.setName(self.recordsTitle)                
+                newPage.setName(self.recordsTitle)
+                newPage.setRemoveSelection(self.removeSelection)
                 
                 # record listener to open PDF or link is cliked
                 newPage.docClicked.connect(self.manageDocClicked)
