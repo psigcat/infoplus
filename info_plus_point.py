@@ -4,8 +4,8 @@ import os
 import subprocess
 import platform
 
-from qgis.gui import *
-from qgis.core import *
+from qgis.gui import * # @UnusedWildImport
+from qgis.core import * # @UnusedWildImport
 
 from PyQt4 import QtCore, QtGui
 
@@ -31,6 +31,9 @@ class InfoPlusPoint(QgsMapTool):
         '''      
         self.defaultZoomScale = self.settings.value('status/defaultZoomScale', 2500)        
         self.highlightTime = int(self.settings.value('status/highlightTime', 1000))
+        self.centerButtonVisible = bool(int(self.settings.value('status/centerButtonVisible', 0)))
+        self.zoomButtonVisible = bool(int(self.settings.value('status/zoomButtonVisible', 0)))  
+        self.formButtonVisible = bool(int(self.settings.value('status/formButtonVisible', 0)))
 
         
     def canvasPressEvent(self, e):
@@ -50,6 +53,11 @@ class InfoPlusPoint(QgsMapTool):
         
         # Create new dialog
         self.dlg = InfoPlusDialog()
+        
+        # Enable/Disable buttons
+        self.dlg.center_PButton.setVisible(self.centerButtonVisible)
+        self.dlg.zoom_PButton.setVisible(self.zoomButtonVisible)
+        self.dlg.form_PButton.setVisible(self.formButtonVisible)
         
         # add listener to selected layer/record
         self.dlg.center_PButton.clicked.connect(self.doZoomCenterAction)

@@ -21,8 +21,8 @@
 from qgis.utils import active_plugins
 from qgis.gui import (QgsMessageBar)
 from qgis.core import (QgsGeometry, QgsPoint, QgsLogger)
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt4.QtCore import * # @UnusedWildImport
+from PyQt4.QtGui import * # @UnusedWildImport
 from PyQt4 import QtWebKit
 
 import resources_rc
@@ -76,6 +76,7 @@ class InfoPlus(QObject):
         # global settings for web componets
         self.initWebKitSettings()
     
+    
     def initWebKitSettings(self):
         ''' Set global configuration for WebKit components
         '''
@@ -97,41 +98,40 @@ class InfoPlus(QObject):
         return button
 
         
-    def createAction(self, icon_path, text, callback):
-        action = QAction(QIcon(icon_path), text, self.iface.mainWindow())
-        # connect the action to the run method
+    def createAction(self, icon_path, text, callback, parent, add_to_toolbar=True):
+        icon = QIcon(icon_path)
+        action = QAction(icon, text, parent)    
+        if add_to_toolbar:
+            self.toolbar.addAction(action)
+            self.iface.addPluginToMenu(self.menu, action)                        
         action.setCheckable(True)
         action.toggled.connect(callback)
         return action
-
+    
         
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
-
-        #icon_path = ':/plugins/InfoPlus/icon_infoplus.png'
-        #self.add_action(icon_path, text=self.tr(u'Cercador avançat'), callback=self.run, parent=self.iface.mainWindow())
-
-        # Create the dock widget and dock it but hide it waiting the ond of qgis loading
-        #self.dlg = InfoPlusDialog(self.iface.mainWindow())
         
-        # Create action that will start plugin configuration
         icon_path = ':/plugins/InfoPlus/icon_infoplus.png'
-        self.actionPoint = self.createAction(icon_path, u"Multi Selection by point", self.runPoint)
-
-        # Create action that will start plugin configuration
         icon_path2 = ':/plugins/InfoPlus/icon_infoplus2.png'        
-        self.actionRectangle = self.createAction(icon_path2, u"Multiple Selection by Rectangle", self.runRectangle)   
-
-        self.toolPoint = InfoPlusPoint(self.iface.mapCanvas(), self.actionPoint, self.settings) 
-        self.toolRectangle = InfoPlusRectangle(self.iface.mapCanvas(), self.actionRectangle, self.settings) 
-        self.toolPoint.setInterface(self.iface)
-        self.toolRectangle.setInterface(self.iface)        
         
-        # QToolButtons
-        self.selectionButton = self.createToolButton(self.toolbar, u'MultipleSelectionButton')
-        self.selectionButton.addAction(self.actionPoint)     
-        self.selectionButton.addAction(self.actionRectangle)
-        self.selectionButton.setDefaultAction(self.actionPoint)         
+        # Check if selection by rectangle is enabled
+        self.actionRectangleEnabled = bool(int(self.settings.value('status/actionRectangleEnabled', 0)))          
+        if self.actionRectangleEnabled: 
+            self.actionPoint = self.createAction(icon_path, u"Multi Selection by point", self.runPoint, self.iface.mainWindow(), False)
+            self.toolPoint = InfoPlusPoint(self.iface.mapCanvas(), self.actionPoint, self.settings) 
+            self.toolPoint.setInterface(self.iface)
+            self.actionRectangle = self.createAction(icon_path2, u"Multiple Selection by Rectangle", self.runRectangle, self.iface.mainWindow(), False)   
+            self.toolRectangle = InfoPlusRectangle(self.iface.mapCanvas(), self.actionRectangle, self.settings) 
+            self.toolRectangle.setInterface(self.iface)        
+            self.selectionButton = self.createToolButton(self.toolbar, u'MultipleSelectionButton')
+            self.selectionButton.addAction(self.actionPoint)     
+            self.selectionButton.addAction(self.actionRectangle)
+            self.selectionButton.setDefaultAction(self.actionPoint)      
+        else:
+            self.actionPoint = self.createAction(icon_path, self.tr(u'Multi Selection by point'), self.runPoint, self.iface.mainWindow())
+            self.toolPoint = InfoPlusPoint(self.iface.mapCanvas(), self.actionPoint, self.settings)             
+            self.toolPoint.setInterface(self.iface)              
     
     
     def unload(self):
@@ -141,17 +141,17 @@ class InfoPlus(QObject):
             self.iface.removeToolBarIcon(action)
             
         # Remove the plugin menu item and icon
-        self.iface.mainWindow().removeToolBar(self.toolbar)      
-        #del self.toolbar        
+        self.iface.mainWindow().removeToolBar(self.toolbar)          
 
     
     def runPoint(self, b):
-        self.actionRectangle.setChecked(False)
-        self.selectionButton.setDefaultAction(self.selectionButton.sender())
         if b:
             self.iface.mapCanvas().setMapTool(self.toolPoint)
         else:
             self.iface.mapCanvas().unsetMapTool(self.toolPoint)
+        if self.actionRectangleEnabled:         
+            self.actionRectangle.setChecked(False)
+            self.selectionButton.setDefaultAction(self.selectionButton.sender())
 
             
     def runRectangle(self, b):
@@ -161,3 +161,4 @@ class InfoPlus(QObject):
             self.iface.mapCanvas().setMapTool(self.toolRectangle)
         else:
             self.iface.mapCanvas().unsetMapTool(self.toolRectangle)
+            

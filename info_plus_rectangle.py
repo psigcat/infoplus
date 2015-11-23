@@ -4,13 +4,14 @@ import os
 import subprocess
 import platform
 
-from qgis.gui import *
-from qgis.core import *
-from PyQt4.Qt import *
+from qgis.gui import * # @UnusedWildImport
+from qgis.core import * # @UnusedWildImport
+from PyQt4.Qt import * # @UnusedWildImport
 from PyQt4 import QtCore, QtGui
 
 from ui.info_plus_dialog import InfoPlusDialog
 from ui.records_display_widget import RecordsDisplayWidget
+
 
 class InfoPlusRectangle(QgsMapTool):
 
