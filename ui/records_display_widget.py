@@ -3,12 +3,12 @@ import os
 import json
 
 from PyQt4 import QtCore, QtGui, uic
-
 from qgis.core import QgsLogger
 
 from template.records_display_widget_bridge import RecordsDisplayWidgetBridge 
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), 'records_display_widget.ui'))
+
 
 class RecordsDisplayWidget(QtGui.QWidget, FORM_CLASS):
     
@@ -32,18 +32,19 @@ class RecordsDisplayWidget(QtGui.QWidget, FORM_CLASS):
         self._recordsDisplayWidgetBridge.selectedRecord.connect(self._setSelectedRecord)
         self._recordsDisplayWidgetBridge.docClicked.connect(self._docClicked)
         self._recordsDisplayWidgetBridge.linkClicked.connect(self._linkClicked)
-        self._recordsDisplayWidgetBridge.highlightRecord.connect(self._hilightRecord)
+        self._recordsDisplayWidgetBridge.highlightRecord.connect(self._highlightRecord)
        
         # att HTML template and JS code to the web view
         self.initWebView()
+        
         
     def initWebView(self):
         ''' Init the webView with the record template and JS usefult to 
             show record table
         '''
         # check status of webView loading
-        self.webView.loadStarted.connect( self._setNotReady )
-        self.webView.loadFinished.connect( self._initWebContent )
+        self.webView.loadStarted.connect(self._setNotReady)
+        self.webView.loadFinished.connect(self._initWebContent)
         
         # get the upper directory of the current file that is in the "ui" directory
         pluginPath = os.path.dirname(os.path.dirname(__file__))
@@ -51,15 +52,18 @@ class RecordsDisplayWidget(QtGui.QWidget, FORM_CLASS):
         
         self.webView.load(QtCore.QUrl.fromLocalFile(webPage))
     
+    
     def isReady(self):
         ''' Status of the loaded webView
         '''
         return self._ready
     
+    
     def _setNotReady(self):
         ''' Set that current webPage is not ready to be managed
         '''
         self._ready = False
+    
     
     def _initWebContent(self, success):
         ''' Set status of page loading
@@ -72,6 +76,7 @@ class RecordsDisplayWidget(QtGui.QWidget, FORM_CLASS):
         
         # wait a wile before loading records.
         QtCore.QTimer.singleShot(300, self._displayRecords)
+        
         
     def _displayRecords(self):
         ''' after a wile show records... this give time that the bridge is available in JS
@@ -98,30 +103,28 @@ class RecordsDisplayWidget(QtGui.QWidget, FORM_CLASS):
         # notify it is ready
         self.ready.emit(self._ready)
     
+    
     def _prepareFeatures_asAccordion(self):
         ''' Prepare selected records in a structure useful for accordion visualization
         '''
         # Get selected features of current layers
         columns = [field.name() for field in self._layer.pendingFields().toList()]
-        total = len(self._layer.selectedFeatures())
-        featuresDict = {'name': 'Records',
-                        'children': []}
+        featuresDict = {'name': 'Registres', 'children': []}
         for i, feature in enumerate(self._layer.selectedFeatures()):
-            item = {'name': feature.id(),
-                    'children': []} 
+            item = {'name': feature.id(), 'children': []} 
             
             # add records
             values = feature.attributes()
             namedValues = zip(columns, values)
             
             for key, value in namedValues:
-                record = {'name': key,
-                          'value': value if value != None else 'NULL'}
+                record = {'name': key, 'value': value if value != None else 'NULL'}
                 item['children'].append(record)
                 
             featuresDict['children'].append( item )
         
         return featuresDict
+
 
     def _setSelectedRecord(self, layerId, featureId):
         ''' Set current selected Record and layer
@@ -131,70 +134,31 @@ class RecordsDisplayWidget(QtGui.QWidget, FORM_CLASS):
         self._selectedLayerId = layerId
         self._selectedFeatureId = int(featureId)
     
-    def _hilightRecord(self, layerId, featureId):
+    
+    def _highlightRecord(self, layerId, featureId):
         ''' Set current hilighted Record and layer
         '''
-        QgsLogger.debug("RecordsDisplayWidget._hilightRecord: on mouse over layerId = {} and record id {}".format(layerId, featureId), 3)
+        QgsLogger.debug("RecordsDisplayWidget._highlightRecord: on mouse over layerId = {} and record id {}".format(layerId, featureId), 3)
         
         if layerId and featureId:
             self.highlightRecord.emit(layerId, featureId)
+    
     
     def _docClicked(self, layerId, featureId, document):
         ''' re emit signal that a document has been clicked
         '''
         self.docClicked.emit(layerId, featureId, document)
     
+    
     def _linkClicked(self, layerId, featureId, link):
         ''' re emit signal that a link document has been clicked
         '''
         self.linkClicked.emit(layerId, featureId, link)
+    
     
     def getSelection(self):
         ''' return current selection touple (that can be none,none if no selection)
         '''
         return self._selectedLayerId, self._selectedFeatureId
     
-#################################################################
-# OLD CODE TO SHOW RECORDS USING DC.JS
-# have to be updated to the new style to load the page
-#################################################################
-    def processLayer_asTable(self, layer):
-        # Get selected features of current layers
-        columns = [field.name() for field in layer.pendingFields().toList()]
-        total = len(layer.selectedFeatures())
-        featuresDicts = []
-        for i, feature in enumerate(layer.selectedFeatures()):
-            print "Feature "+str(i)+ " of "+str(total)
-            
-            items = [('featureId', feature.id())]
-            values = feature.attributes()
-            items.extend( zip(columns, values) )
-            featureDict = OrderedDict(items)
-            
-            for key, value in featureDict.items():
-                if value == None:
-                    featureDict[key] = 'NULL'
-            
-            print featureDict
-            featuresDicts.append( featureDict )
-        
-        if len(featuresDicts) == 0:
-            return
-        
-        self.processFeatures(layer.id(), featuresDicts)
-        
-    def processFeatures_asTable(self, layerId, featuresDicts):
-        ''' Push record in the webView
-        '''
-        if self.newPage:
-            # first inject bridge object
-            self.newPage.webView.page().mainFrame().addToJavaScriptWindowObject("recordsDisplayWidgetBridge", self.recordsDisplayWidgetBridge)
-            
-            # then render records
-            jsonString = json.dumps(featuresDicts)
-            
-            JsCommand = "showRecords('%s', '%s')" % (layerId, jsonString)
-            QgsLogger.debug(self.tr("display records with with JS command: %s" % JsCommand), 3)
-            
-            self.newPage.webView.page().mainFrame().evaluateJavaScript(JsCommand)
     

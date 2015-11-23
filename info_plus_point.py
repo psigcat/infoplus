@@ -1,12 +1,9 @@
-import json
-import time
 import os
 import subprocess
 import platform
 
 from qgis.gui import * # @UnusedWildImport
 from qgis.core import * # @UnusedWildImport
-
 from PyQt4 import QtCore, QtGui
 
 from ui.info_plus_dialog import InfoPlusDialog
@@ -33,7 +30,8 @@ class InfoPlusPoint(QgsMapTool):
         self.highlightTime = int(self.settings.value('status/highlightTime', 1000))
         self.centerButtonVisible = bool(int(self.settings.value('status/centerButtonVisible', 0)))
         self.zoomButtonVisible = bool(int(self.settings.value('status/zoomButtonVisible', 0)))  
-        self.formButtonVisible = bool(int(self.settings.value('status/formButtonVisible', 0)))
+        self.formButtonVisible = bool(int(self.settings.value('status/formButtonVisible', 1)))
+        self.recordsTitle = self.settings.value('status/recordsTitle', 'Records:')
 
         
     def canvasPressEvent(self, e):
@@ -154,6 +152,7 @@ class InfoPlusPoint(QgsMapTool):
             if layer.selectedFeatureCount() > 0:
                 newPage = RecordsDisplayWidget(layer, self.iface.mainWindow())
                 newPage.setObjectName('page_' + layer.id())
+                newPage.setName(self.recordsTitle)
                 
                 # record listener to open PDF or link is cliked
                 newPage.docClicked.connect(self.manageDocClicked)
@@ -196,16 +195,16 @@ class InfoPlusPoint(QgsMapTool):
         self.currentHighlight = QgsHighlight(self.canvas, geometry, layer)
         
         # set standard style
-        color = QtGui.QColor( self.settings.value( "/Map/highlight/color", QGis.DEFAULT_HIGHLIGHT_COLOR.name() ) )
-        alpha = int( self.settings.value( "/Map/highlight/colorAlpha", QGis.DEFAULT_HIGHLIGHT_COLOR.alpha() ))
-        buffer = float(self.settings.value( "/Map/highlight/buffer", QGis.DEFAULT_HIGHLIGHT_BUFFER_MM ))
-        minWidth = float(self.settings.value( "/Map/highlight/minWidth", QGis.DEFAULT_HIGHLIGHT_MIN_WIDTH_MM ))
+        color = QtGui.QColor(self.settings.value("/Map/highlight/color", QGis.DEFAULT_HIGHLIGHT_COLOR.name()))
+        alpha = int(self.settings.value("/Map/highlight/colorAlpha", QGis.DEFAULT_HIGHLIGHT_COLOR.alpha()))
+        buffer_ = float(self.settings.value("/Map/highlight/buffer", QGis.DEFAULT_HIGHLIGHT_BUFFER_MM))
+        minWidth = float(self.settings.value("/Map/highlight/minWidth", QGis.DEFAULT_HIGHLIGHT_MIN_WIDTH_MM))
         
-        self.currentHighlight.setColor( color ) # sets also fill with default alpha
-        color.setAlpha( alpha )
-        self.currentHighlight.setFillColor( color ) # sets fill with alpha
-        self.currentHighlight.setBuffer( buffer )
-        self.currentHighlight.setMinWidth( minWidth )
+        self.currentHighlight.setColor(color) # sets also fill with default alpha
+        color.setAlpha(alpha)
+        self.currentHighlight.setFillColor(color) # sets fill with alpha
+        self.currentHighlight.setBuffer(buffer_)
+        self.currentHighlight.setMinWidth(minWidth)
         self.currentHighlight.show()
         
         # remove highlight after a while
