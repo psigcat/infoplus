@@ -66,16 +66,29 @@ class InfoPlus(QObject):
         self.settings = QSettings(settingFile, QSettings.IniFormat)
         self.settings.setIniCodec(sys.getfilesystemencoding())
         
+        # load plugin settings
+        self.loadPluginSettings()            
+        
         # Declare instance attributes
         self.actions = []
         self.menu = self.tr(u'&infoplus')
         
-        self.toolbar = self.iface.addToolBar(u'InfoPlus')
-        self.toolbar.setObjectName(u'InfoPlus')
-        
         # global settings for web componets
         self.initWebKitSettings()
     
+    
+    def loadPluginSettings(self):
+        ''' Load plugin settings
+        '''    
+        # Selection by rectangle is enabled or not?                
+        self.actionRectangleEnabled = bool(int(self.settings.value('status/actionRectangleEnabled', 0)))  
+                
+        # Create own plugin toolbar or not?
+        self.pluginToolbarEnabled = bool(int(self.settings.value('status/pluginToolbarEnabled', 1)))
+        if self.pluginToolbarEnabled:
+            self.toolbar = self.iface.addToolBar(u'InfoPlus')
+            self.toolbar.setObjectName(u'InfoPlus')
+            
     
     def initWebKitSettings(self):
         ''' Set global configuration for WebKit components
@@ -98,14 +111,22 @@ class InfoPlus(QObject):
         return button
 
         
-    def createAction(self, icon_path, text, callback, parent, add_to_toolbar=True):
+    def createAction(self, icon_path, text, callback, parent, add_to_toolbar=True, add_to_menu=True):
+        
         icon = QIcon(icon_path)
         action = QAction(icon, text, parent)    
+        action.toggled.connect(callback)
+        action.setCheckable(True)
+        
         if add_to_toolbar:
             self.toolbar.addAction(action)
-            self.iface.addPluginToMenu(self.menu, action)                        
-        action.setCheckable(True)
-        action.toggled.connect(callback)
+        else:
+            self.iface.addToolBarIcon(action)       
+        if add_to_menu:
+            self.iface.addPluginToMenu(self.menu, action)
+            
+        self.actions.append(action)
+        
         return action
     
         
@@ -115,13 +136,12 @@ class InfoPlus(QObject):
         icon_path = ':/plugins/InfoPlus/icon_infoplus.png'
         icon_path2 = ':/plugins/InfoPlus/icon_infoplus2.png'        
         
-        # Check if selection by rectangle is enabled
-        self.actionRectangleEnabled = bool(int(self.settings.value('status/actionRectangleEnabled', 0)))          
+        # Check if selection by rectangle is enabled       
         if self.actionRectangleEnabled: 
-            self.actionPoint = self.createAction(icon_path, u"Multi Selection by point", self.runPoint, self.iface.mainWindow(), False)
+            self.actionPoint = self.createAction(icon_path, u"Multi Selection by point", self.runPoint, self.iface.mainWindow(), self.pluginToolbarEnabled)
             self.toolPoint = InfoPlusPoint(self.iface.mapCanvas(), self.actionPoint, self.settings) 
             self.toolPoint.setInterface(self.iface)
-            self.actionRectangle = self.createAction(icon_path2, u"Multiple Selection by Rectangle", self.runRectangle, self.iface.mainWindow(), False)   
+            self.actionRectangle = self.createAction(icon_path2, u"Multiple Selection by Rectangle", self.runRectangle, self.iface.mainWindow(), self.pluginToolbarEnabled)   
             self.toolRectangle = InfoPlusRectangle(self.iface.mapCanvas(), self.actionRectangle, self.settings) 
             self.toolRectangle.setInterface(self.iface)        
             self.selectionButton = self.createToolButton(self.toolbar, u'MultipleSelectionButton')
@@ -129,7 +149,7 @@ class InfoPlus(QObject):
             self.selectionButton.addAction(self.actionRectangle)
             self.selectionButton.setDefaultAction(self.actionPoint)      
         else:
-            self.actionPoint = self.createAction(icon_path, self.tr(u'Multi Selection by point'), self.runPoint, self.iface.mainWindow())
+            self.actionPoint = self.createAction(icon_path, self.tr(u'Multi Selection by point'), self.runPoint, self.iface.mainWindow(), self.pluginToolbarEnabled)
             self.toolPoint = InfoPlusPoint(self.iface.mapCanvas(), self.actionPoint, self.settings)             
             self.toolPoint.setInterface(self.iface)              
     
@@ -140,9 +160,11 @@ class InfoPlus(QObject):
             self.iface.removePluginMenu(self.tr(u'&infoplus'), action)
             self.iface.removeToolBarIcon(action)
             
-        # Remove the plugin menu item and icon
-        self.iface.mainWindow().removeToolBar(self.toolbar)          
-
+        if self.pluginToolbarEnabled:
+            # Remove the plugin menu item and icon
+            #self.iface.mainWindow().removeToolBar(self.toolbar)          
+            del self.toolbar
+                        
     
     def runPoint(self, b):
         if b:
